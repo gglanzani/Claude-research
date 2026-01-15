@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/xml"
 	"flag"
 	"fmt"
@@ -30,12 +31,24 @@ type Item struct {
 func main() {
 	feedURL := flag.String("feed", "", "RSS feed URL (required)")
 	sinceDays := flag.Int("since", 0, "Number of days to look back (0 = no limit)")
+	authorsFile := flag.String("authors", "", "Path to file with allowed author names (one per line)")
 	flag.Parse()
 
 	if *feedURL == "" {
 		fmt.Fprintf(os.Stderr, "Error: --feed parameter is required\n")
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	// Load allowed authors if file is specified
+	var allowedAuthors map[string]bool
+	if *authorsFile != "" {
+		var err error
+		allowedAuthors, err = loadAllowedAuthors(*authorsFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading authors file: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	// Fetch the feed
@@ -79,6 +92,11 @@ func main() {
 
 		// Check if author should be filtered (email or has business title)
 		if shouldFilterAuthor(item.Creator) {
+			continue
+		}
+
+		// Check if author is in allowed list (if authors file is specified)
+		if allowedAuthors != nil && !allowedAuthors[item.Creator] {
 			continue
 		}
 
@@ -165,4 +183,28 @@ func parseRSSDate(dateStr string) (time.Time, error) {
 	}
 
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
+}
+
+// loadAllowedAuthors reads a file with author names (one per line) and returns a set
+func loadAllowedAuthors(filePath string) (map[string]bool, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	authors := make(map[string]bool)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		name := strings.TrimSpace(scanner.Text())
+		if name != "" && !strings.HasPrefix(name, "#") { // Skip empty lines and comments
+			authors[name] = true
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return authors, nil
 }

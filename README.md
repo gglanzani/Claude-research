@@ -6,6 +6,8 @@ A Go command-line tool that filters RSS feeds to show only technical blog posts 
 
 - Fetches and parses RSS feeds
 - Filters out marketing content (posts with `/news/` or `/articles/` in the URL path)
+- Filters out posts by authors with email addresses or business titles
+- Optional whitelist of allowed authors from a text file
 - Optional date filtering to show only recent posts
 - Outputs clean Markdown list with linked titles and authors
 
@@ -27,6 +29,16 @@ go run main.go --feed "https://xebia.com/blog/category/domains/data-ai/feed"
 go run main.go --feed "https://xebia.com/blog/category/domains/data-ai/feed" --since 7
 ```
 
+### Filter by allowed authors:
+```bash
+go run main.go --feed "https://xebia.com/blog/category/domains/data-ai/feed" --authors allowed_authors.txt
+```
+
+### Combine all filters:
+```bash
+go run main.go --feed "https://xebia.com/blog/category/domains/data-ai/feed" --since 90 --authors allowed_authors.txt
+```
+
 ### Using the compiled binary:
 ```bash
 ./feed-filter --feed "https://xebia.com/blog/category/domains/data-ai/feed" --since 30
@@ -36,6 +48,7 @@ go run main.go --feed "https://xebia.com/blog/category/domains/data-ai/feed" --s
 
 - `--feed` (required): RSS feed URL to fetch and filter
 - `--since` (optional): Number of days to look back (0 = no limit, default: 0)
+- `--authors` (optional): Path to text file with allowed author names (one per line)
 
 ## Output Format
 
@@ -48,13 +61,29 @@ The tool outputs a Markdown list to stdout:
 
 ## Filtering Logic
 
-The tool filters OUT posts that contain:
-- `/news/` in the URL path
-- `/articles/` in the URL path
-- `post_type=news` in query parameters
-- `post_type=article` or `post_type=articles` in query parameters
+The tool filters OUT posts that:
+- Contain `/news/` in the URL path
+- Contain `/articles/` in the URL path
+- Have `post_type=news` in query parameters
+- Have `post_type=article` or `post_type=articles` in query parameters
+- Have authors with email addresses (containing `@`)
+- Have authors with business titles (containing `,`)
+- Have authors not in the allowed authors file (if `--authors` is specified)
 
-This keeps only technical blog posts (typically under `/blog/` paths).
+This keeps only technical blog posts from real consultant names.
+
+## Authors File Format
+
+The authors file should contain one author name per line, exactly as it appears in the RSS feed:
+
+```
+# This is a comment - lines starting with # are ignored
+Giovanni Lanzani
+XiaoHan Li
+Katarzyna Kusznierczuk
+```
+
+Empty lines are also ignored. Names are case-sensitive and must match exactly.
 
 ## Example
 

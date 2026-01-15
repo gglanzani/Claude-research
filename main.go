@@ -77,6 +77,11 @@ func main() {
 			continue
 		}
 
+		// Check if author should be filtered (email or has business title)
+		if shouldFilterAuthor(item.Creator) {
+			continue
+		}
+
 		// Check date if since parameter is specified
 		if *sinceDays > 0 {
 			pubDate, err := parseRSSDate(item.PubDate)
@@ -117,6 +122,26 @@ func shouldFilter(link string) bool {
 	postType := query.Get("post_type")
 
 	return postType == "news" || postType == "article" || postType == "articles"
+}
+
+// shouldFilterAuthor returns true if the author should be filtered out
+// Filters: email addresses (contains @) and business titles (contains comma)
+func shouldFilterAuthor(author string) bool {
+	if author == "" {
+		return false
+	}
+
+	// Filter out email addresses
+	if strings.Contains(author, "@") {
+		return true
+	}
+
+	// Filter out authors with business titles (indicated by comma)
+	if strings.Contains(author, ",") {
+		return true
+	}
+
+	return false
 }
 
 // parseRSSDate parses common RSS date formats

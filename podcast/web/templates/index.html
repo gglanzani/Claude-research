@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube to Podcast</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YouTube to Podcast</h1>
+            <nav>
+                <a href="/">Add Episode</a>
+                <a href="/episodes">Episodes</a>
+                <a href="/bookmarklet">Bookmarklet</a>
+                <a href="/feed.xml" target="_blank">RSS Feed</a>
+            </nav>
+        </header>
+
+        <main>
+            <form id="episode-form" method="POST" action="/api/episodes">
+                <div class="form-group">
+                    <label for="youtube_url">YouTube URL *</label>
+                    <input type="url" id="youtube_url" name="youtube_url"
+                           value="{{.URL}}"
+                           placeholder="https://www.youtube.com/watch?v=..."
+                           required>
+                </div>
+
+                <details>
+                    <summary>Optional Metadata (click to expand)</summary>
+                    <div class="form-group">
+                        <label for="title">Custom Title</label>
+                        <input type="text" id="title" name="title"
+                               placeholder="Leave empty to use video title">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Custom Description</label>
+                        <textarea id="description" name="description" rows="3"
+                                  placeholder="Leave empty to use video description"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="author">Custom Author</label>
+                        <input type="text" id="author" name="author"
+                               placeholder="Leave empty to use channel name">
+                    </div>
+                </details>
+
+                <button type="submit" id="submit-btn">Add to Podcast</button>
+            </form>
+
+            <div id="status" class="status hidden">
+                <div class="spinner"></div>
+                <p id="status-message">Processing...</p>
+            </div>
+
+            <div id="result" class="result hidden">
+                <p id="result-message"></p>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by yt-dlp | <a href="{{.ExternalURL}}/feed.xml">Subscribe to RSS</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const form = document.getElementById('episode-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const statusDiv = document.getElementById('status');
+        const statusMsg = document.getElementById('status-message');
+        const resultDiv = document.getElementById('result');
+        const resultMsg = document.getElementById('result-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            submitBtn.disabled = true;
+            statusDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            statusMsg.textContent = 'Submitting...';
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch('/api/episodes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to submit');
+                }
+
+                // Poll for job status
+                pollJobStatus(result.job_id);
+            } catch (err) {
+                showError(err.message);
+            }
+        });
+
+        async function pollJobStatus(jobId) {
+            statusMsg.textContent = 'Processing video...';
+
+            const poll = async () => {
+                try {
+                    const response = await fetch(`/api/jobs/${jobId}`);
+                    const job = await response.json();
+
+                    if (job.status === 'completed') {
+                        showSuccess('Episode added successfully!');
+                        form.reset();
+                    } else if (job.status === 'failed') {
+                        showError(job.error || 'Job failed');
+                    } else {
+                        statusMsg.textContent = `Status: ${job.status}...`;
+                        setTimeout(poll, 2000);
+                    }
+                } catch (err) {
+                    showError('Failed to check status');
+                }
+            };
+
+            poll();
+        }
+
+        function showSuccess(message) {
+            statusDiv.classList.add('hidden');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'result success';
+            resultMsg.textContent = message;
+            submitBtn.disabled = false;
+        }
+
+        function showError(message) {
+            statusDiv.classList.add('hidden');
+            resultDiv.classList.remove('hidden');
+            resultDiv.className = 'result error';
+            resultMsg.textContent = message;
+            submitBtn.disabled = false;
+        }
+    </script>
+</body>
+</html>

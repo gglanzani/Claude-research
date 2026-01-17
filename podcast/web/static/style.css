@@ -1,0 +1,363 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: #f5f5f5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: #1a1a2e;
+    color: white;
+    padding: 20px;
+    margin: -20px -20px 20px;
+    border-radius: 0 0 8px 8px;
+}
+
+header h1 {
+    margin-bottom: 10px;
+}
+
+nav {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+nav a {
+    color: #a0a0ff;
+    text-decoration: none;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+main {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #1a1a2e;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="url"],
+textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: #1a1a2e;
+}
+
+details {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+}
+
+details[open] summary {
+    margin-bottom: 15px;
+}
+
+button[type="submit"],
+.btn {
+    background: #1a1a2e;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+button[type="submit"]:hover,
+.btn:hover {
+    background: #2a2a4e;
+}
+
+button:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #666;
+}
+
+.status {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #ddd;
+    border-top-color: #1a1a2e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.result {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.result.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.result.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Bookmarklet page */
+.bookmarklet-container {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.bookmarklet-link {
+    display: inline-block;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    cursor: grab;
+}
+
+.bookmarklet-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.code-block {
+    background: #1a1a2e;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.code-block code {
+    flex: 1;
+    color: #a0ffa0;
+    font-family: monospace;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.copy-btn {
+    background: #444;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.copy-btn:hover {
+    background: #555;
+}
+
+h3 {
+    margin: 25px 0 10px;
+    color: #1a1a2e;
+}
+
+ol, ul {
+    margin-left: 20px;
+}
+
+li {
+    margin: 8px 0;
+}
+
+/* Episodes page */
+.feed-url {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+.feed-url label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.feed-url input {
+    flex: 1;
+}
+
+.feed-url button {
+    padding: 12px 16px;
+}
+
+.episode-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.episode {
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.episode-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.episode-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.episode-date {
+    color: #666;
+    font-size: 14px;
+}
+
+.episode-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+.episode-meta .chapters {
+    color: #667eea;
+}
+
+.episode-description {
+    color: #555;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.episode-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.episode-actions .btn {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.no-episodes {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+footer {
+    margin-top: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}
+
+footer a {
+    color: #667eea;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    header {
+        margin: -10px -10px 15px;
+        padding: 15px;
+    }
+
+    main {
+        padding: 20px;
+    }
+
+    .feed-url {
+        flex-direction: column;
+    }
+
+    .episode-header {
+        flex-direction: column;
+    }
+
+    .episode-date {
+        margin-top: 5px;
+    }
+}

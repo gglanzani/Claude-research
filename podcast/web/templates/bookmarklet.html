@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarklet - YouTube to Podcast</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YouTube to Podcast</h1>
+            <nav>
+                <a href="/">Add Episode</a>
+                <a href="/episodes">Episodes</a>
+                <a href="/bookmarklet">Bookmarklet</a>
+                <a href="/feed.xml" target="_blank">RSS Feed</a>
+            </nav>
+        </header>
+
+        <main>
+            <h2>Install Bookmarklet</h2>
+
+            <p>Drag this button to your bookmarks bar:</p>
+
+            <div class="bookmarklet-container">
+                <a href="{{.Bookmarklet}}" class="bookmarklet-link" onclick="return false;">
+                    Add to Podcast
+                </a>
+            </div>
+
+            <h3>Instructions</h3>
+            <ol>
+                <li><strong>Show your bookmarks bar</strong> (Ctrl+Shift+B on Chrome/Firefox)</li>
+                <li><strong>Drag</strong> the "Add to Podcast" button above to your bookmarks bar</li>
+                <li>Navigate to any YouTube video</li>
+                <li><strong>Click the bookmarklet</strong> to open the submission form with the URL pre-filled</li>
+            </ol>
+
+            <h3>Manual Installation</h3>
+            <p>If drag-and-drop doesn't work, create a new bookmark with this URL:</p>
+            <div class="code-block">
+                <code id="bookmarklet-code">{{.Bookmarklet}}</code>
+                <button onclick="copyCode()" class="copy-btn">Copy</button>
+            </div>
+
+            <h3>How It Works</h3>
+            <ul>
+                <li>The bookmarklet detects if you're on a YouTube video page</li>
+                <li>It opens this site with the video URL pre-filled</li>
+                <li>You can optionally edit the metadata before submitting</li>
+                <li>Works with youtube.com/watch and youtu.be URLs</li>
+            </ul>
+        </main>
+
+        <footer>
+            <p>Server URL: {{.ExternalURL}}</p>
+        </footer>
+    </div>
+
+    <script>
+        function copyCode() {
+            const code = document.getElementById('bookmarklet-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

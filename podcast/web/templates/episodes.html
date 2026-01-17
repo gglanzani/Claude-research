@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Episodes - YouTube to Podcast</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YouTube to Podcast</h1>
+            <nav>
+                <a href="/">Add Episode</a>
+                <a href="/episodes">Episodes</a>
+                <a href="/bookmarklet">Bookmarklet</a>
+                <a href="/feed.xml" target="_blank">RSS Feed</a>
+            </nav>
+        </header>
+
+        <main>
+            <h2>Episodes</h2>
+
+            <div class="feed-url">
+                <label>RSS Feed URL:</label>
+                <input type="text" value="{{.FeedURL}}" readonly id="feed-url">
+                <button onclick="copyFeedUrl()">Copy</button>
+            </div>
+
+            {{if .Episodes}}
+            <ul class="episode-list">
+                {{range .Episodes}}
+                <li class="episode">
+                    <div class="episode-header">
+                        <h3>{{.Title}}</h3>
+                        <span class="episode-date">{{.PublishedAt.Format "Jan 2, 2006"}}</span>
+                    </div>
+                    <div class="episode-meta">
+                        <span class="duration">{{formatDuration .Duration}}</span>
+                        <span class="author">{{.Author}}</span>
+                        {{if .ChaptersURL}}
+                        <span class="chapters">Has chapters</span>
+                        {{end}}
+                    </div>
+                    <p class="episode-description">{{truncate .Description 200}}</p>
+                    <div class="episode-actions">
+                        <a href="{{.AudioURL}}" target="_blank" class="btn">Download MP3</a>
+                        <a href="{{.YouTubeURL}}" target="_blank" class="btn btn-secondary">YouTube</a>
+                    </div>
+                </li>
+                {{end}}
+            </ul>
+            {{else}}
+            <p class="no-episodes">No episodes yet. <a href="/">Add your first episode</a>.</p>
+            {{end}}
+        </main>
+
+        <footer>
+            <p>{{len .Episodes}} episode(s) | <a href="{{.FeedURL}}">Subscribe to RSS</a></p>
+        </footer>
+    </div>
+
+    <script>
+        function copyFeedUrl() {
+            const input = document.getElementById('feed-url');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                alert('Feed URL copied!');
+            });
+        }
+    </script>
+</body>
+</html>

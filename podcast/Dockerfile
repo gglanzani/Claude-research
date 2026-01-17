@@ -43,8 +43,8 @@ EXPOSE 8080
 ENV PORT=8080 \
     STORAGE_TYPE=local \
     LOCAL_STORAGE_PATH=/app/data \
-    AUDIO_FORMAT=mp3 \
-    AUDIO_QUALITY=192
+    AUDIO_FORMAT=aac \
+    AUDIO_QUALITY=64
 
 # Run the application
 CMD ["/app/podcast"]

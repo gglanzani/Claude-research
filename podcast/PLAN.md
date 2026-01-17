@@ -8,6 +8,12 @@ A web application that converts YouTube videos to podcast episodes by extracting
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
+│                      Browser Bookmarklet                         │
+│            (Captures YouTube URL, opens submission form)         │
+└─────────────────────────────────┬───────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────┐
 │                         Web Frontend                             │
 │                  (HTML form for URL + metadata)                  │
 └─────────────────────────────────────┬───────────────────────────┘
@@ -48,6 +54,127 @@ A web application that converts YouTube videos to podcast episodes by extracting
 - **RSS Generation**: Custom XML or `gorilla/feeds` library
 - **Storage**: Modular interface, GCS implementation first
 - **Frontend**: Simple HTML/CSS (embedded in Go binary)
+- **Chapters**: yt-dlp metadata extraction + Podcasting 2.0 chapter format
+
+## Bookmarklet
+
+A browser bookmarklet allows one-click submission from any YouTube page.
+
+### Bookmarklet Code
+
+```javascript
+javascript:(function(){
+  var url=location.href;
+  if(url.match(/youtube\.com\/watch|youtu\.be\//)){
+    window.open('YOUR_SERVER_URL/?url='+encodeURIComponent(url),'_blank');
+  }else{
+    alert('Not a YouTube video page');
+  }
+})();
+```
+
+### Features
+- Detects if current page is a YouTube video
+- Opens submission form with URL pre-filled
+- Works on both youtube.com and youtu.be URLs
+- User can add/edit metadata before submitting
+
+### Endpoints Supporting Bookmarklet
+
+- `GET /?url=<encoded_url>` - Opens form with URL pre-populated
+- `GET /api/bookmarklet.js` - Returns bookmarklet code with server URL configured
+
+### Installation Page
+
+The web UI will include a `/bookmarklet` page with:
+- Drag-and-drop installation link
+- Instructions for different browsers
+- QR code for mobile bookmark apps (if applicable)
+
+## Chapter Support
+
+Chapters enhance podcast episodes by providing navigation points within the audio.
+
+### Chapter Extraction Strategy
+
+1. **Primary: yt-dlp metadata** - Use `--write-info-json` flag to extract chapters
+   - yt-dlp automatically parses chapter markers from YouTube
+   - Handles both API-provided chapters and description-based chapters
+
+2. **Fallback: Description parsing** - If yt-dlp doesn't find chapters, parse description
+   - Pattern: `MM:SS Title` or `HH:MM:SS Title` at start of lines
+   - Regex: `^(\d{1,2}:)?(\d{1,2}):(\d{2})\s+(.+)$`
+
+### Chapter Data Model
+
+```go
+type Chapter struct {
+    StartTime   float64 `json:"start_time"`   // seconds
+    EndTime     float64 `json:"end_time"`     // seconds (0 = until next chapter)
+    Title       string  `json:"title"`
+    ImageURL    string  `json:"image_url"`    // optional chapter art
+}
+
+type Episode struct {
+    // ... existing fields ...
+    Chapters    []Chapter `json:"chapters"`
+    ChaptersURL string    `json:"chapters_url"` // URL to chapters.json file
+}
+```
+
+### Podcasting 2.0 Chapters Format
+
+Chapters are stored as separate JSON files following the Podcasting 2.0 spec:
+
+**File: `chapters/{episode-id}.json`**
+```json
+{
+  "version": "1.2.0",
+  "chapters": [
+    {
+      "startTime": 0,
+      "title": "Introduction"
+    },
+    {
+      "startTime": 180,
+      "title": "Main Topic"
+    },
+    {
+      "startTime": 600,
+      "title": "Conclusion"
+    }
+  ]
+}
+```
+
+### RSS Integration
+
+Add Podcasting 2.0 namespace and chapter references:
+
+```xml
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:podcast="https://podcastindex.org/namespace/1.0"
+     xmlns:atom="http://www.w3.org/2005/Atom">
+  ...
+  <item>
+    ...
+    <podcast:chapters url="https://storage.../chapters/episode-id.json"
+                      type="application/json+chapters"/>
+  </item>
+</rss>
+```
+
+### Supported Podcast Apps
+
+Apps supporting Podcasting 2.0 chapters:
+- Pocket Casts
+- Overcast
+- Castro
+- Podcast Addict
+- AntennaPod
+- Podverse
+- Fountain
 
 ## Project Structure
 
@@ -69,6 +196,9 @@ podcast/
 │   │   ├── storage.go      # Storage interface
 │   │   ├── gcs.go          # GCS implementation
 │   │   └── local.go        # Local filesystem (for testing)
+│   ├── chapters/
+│   │   ├── extractor.go    # Chapter extraction from yt-dlp/description
+│   │   └── parser.go       # Description timestamp parsing
 │   ├── rss/
 │   │   ├── feed.go         # RSS feed generation
 │   │   └── episode.go      # Episode metadata
@@ -78,7 +208,8 @@ podcast/
 │       └── processor.go    # Background job processing
 ├── web/
 │   ├── templates/
-│   │   └── index.html      # Main form page
+│   │   ├── index.html      # Main form page
+│   │   └── bookmarklet.html # Bookmarklet installation page
 │   └── static/
 │       └── style.css       # Minimal styling
 └── README.md
@@ -147,6 +278,13 @@ AUDIO_QUALITY=192  # kbps
 
 ### `GET /`
 - Serves the HTML form for submitting YouTube URLs
+- Accepts optional `?url=` query param (for bookmarklet pre-fill)
+
+### `GET /bookmarklet`
+- Serves the bookmarklet installation page with drag-and-drop link
+
+### `GET /api/bookmarklet.js`
+- Returns the bookmarklet JavaScript with configured server URL
 
 ### `POST /api/episodes`
 - **Request Body**:
@@ -214,19 +352,33 @@ type Storage interface {
 1. Create yt-dlp wrapper
 2. Implement audio extraction with configurable format/quality
 3. Extract video metadata (title, description, duration, thumbnail)
-4. Handle errors and edge cases (age-restricted, unavailable, etc.)
+4. Extract chapters from yt-dlp info JSON
+5. Handle errors and edge cases (age-restricted, unavailable, etc.)
+
+### Phase 3.5: Chapter Extraction
+1. Parse yt-dlp chapters from info JSON
+2. Implement fallback description parser for timestamp patterns
+3. Generate Podcasting 2.0 chapters JSON files
+4. Upload chapter files to storage
 
 ### Phase 4: RSS Feed Generation
 1. Create episode data model
 2. Implement RSS 2.0 feed generation with iTunes podcast extensions
-3. Store episode metadata in JSON file on storage
-4. Load and update feed atomically
+3. Add Podcasting 2.0 namespace for chapter support
+4. Store episode metadata in JSON file on storage
+5. Load and update feed atomically
 
 ### Phase 5: HTTP Handlers & Web UI
 1. Create form submission handler
 2. Implement job status endpoint
 3. Create simple HTML form with JavaScript for status polling
-4. Add episode listing page
+4. Add URL pre-fill support for bookmarklet integration
+5. Add episode listing page
+
+### Phase 5.5: Bookmarklet
+1. Create bookmarklet installation page
+2. Implement bookmarklet.js endpoint with dynamic server URL
+3. Add drag-and-drop installation instructions
 
 ### Phase 6: Job Processing
 1. Implement background job processor
@@ -241,12 +393,13 @@ type Storage interface {
 
 ## RSS Feed Format
 
-The generated RSS feed will follow the RSS 2.0 specification with iTunes podcast extensions:
+The generated RSS feed will follow the RSS 2.0 specification with iTunes and Podcasting 2.0 extensions:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
      xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:podcast="https://podcastindex.org/namespace/1.0"
      xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>My YouTube Podcast</title>
@@ -268,6 +421,8 @@ The generated RSS feed will follow the RSS 2.0 specification with iTunes podcast
       <pubDate>Mon, 01 Jan 2024 00:00:00 GMT</pubDate>
       <itunes:duration>3600</itunes:duration>
       <itunes:author>Author</itunes:author>
+      <podcast:chapters url="https://storage.googleapis.com/bucket/chapters/episode-uuid.json"
+                        type="application/json+chapters"/>
     </item>
   </channel>
 </rss>
@@ -283,6 +438,8 @@ The generated RSS feed will follow the RSS 2.0 specification with iTunes podcast
 | GCS auth failure | Fail startup with clear error |
 | Upload failure | Retry 3 times, then mark job failed |
 | RSS generation failure | Log error, keep previous RSS |
+| No chapters found | Continue without chapters (not an error) |
+| Chapter parsing failure | Log warning, continue without chapters |
 
 ## Future Enhancements (Out of Scope)
 

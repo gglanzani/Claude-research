@@ -121,7 +121,7 @@
                         showError(job.error || 'Job failed');
                     } else {
                         statusMsg.textContent = `Status: ${job.status}...`;
-                        setTimeout(poll, 2000);
+                        setTimeout(poll, 20000);
                     }
                 } catch (err) {
                     showError('Failed to check status');

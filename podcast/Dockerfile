@@ -35,6 +35,7 @@ COPY --from=builder /podcast /app/podcast
 
 # Create data directory
 RUN mkdir -p /app/data
+RUN mkdir -p /app/secrets
 
 # Expose port
 EXPOSE 8080

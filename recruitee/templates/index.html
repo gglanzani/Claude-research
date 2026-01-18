@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - Data & AI | Xebia</title>
+    <link rel="stylesheet" href="static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">
+                <svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <text x="0" y="24" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="white">xebia</text>
+                </svg>
+            </a>
+            <nav class="nav">
+                <a href="https://xebia.com/about-us/" class="nav-link">About Us</a>
+                <a href="https://xebia.com/services/" class="nav-link">Services</a>
+                <a href="/" class="nav-link active">Careers</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <span class="hero-tag">Data & AI</span>
+                <h1 class="hero-title">Shape the future with Data & AI</h1>
+                <p class="hero-subtitle">Join our team of experts building intelligent solutions that transform businesses worldwide.</p>
+            </div>
+        </div>
+        <div class="hero-bg"></div>
+    </section>
+
+    <main class="main">
+        <div class="container">
+            <div class="jobs-header">
+                <h2 class="jobs-title">Open positions</h2>
+                <span class="jobs-count">{{.TotalCount}} positions available</span>
+            </div>
+
+            {{if eq .TotalCount 0}}
+            <div class="no-jobs">
+                <p>No open positions at the moment. Check back soon!</p>
+            </div>
+            {{else}}
+            <div class="jobs-grid">
+                {{range .Offers}}
+                <a href="jobs/{{.Slug}}.html" class="job-card">
+                    <div class="job-card-header">
+                        <h3 class="job-title">{{.Title}}</h3>
+                        <span class="job-arrow">→</span>
+                    </div>
+                    <div class="job-meta">
+                        <span class="job-location">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 0C5.24 0 3 2.24 3 5c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5zm0 7.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
+                            </svg>
+                            {{.GetLocationString}}
+                        </span>
+                        <span class="job-type">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M14 4h-3V3c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v1H2c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7 3h2v1H7V3z"/>
+                            </svg>
+                            {{.GetEmploymentType}}
+                        </span>
+                        <span class="job-work-type">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M2 2h12v12H2V2zm1 1v10h10V3H3zm2 2h6v1H5V5zm0 2h6v1H5V7zm0 2h4v1H5V9z"/>
+                            </svg>
+                            {{.GetWorkType}}
+                        </span>
+                    </div>
+                </a>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="footer-logo">xebia</span>
+                    <p class="footer-tagline">Transforming businesses through technology excellence.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="https://xebia.com/privacy-policy/" class="footer-link">Privacy Policy</a>
+                    <a href="https://xebia.com/contact/" class="footer-link">Contact</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Xebia. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

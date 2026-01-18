@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Offer.Title}} | Xebia Careers</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <text x="0" y="24" font-family="Inter, sans-serif" font-size="24" font-weight="700" fill="white">xebia</text>
+                </svg>
+            </a>
+            <nav class="nav">
+                <a href="https://xebia.com/about-us/" class="nav-link">About Us</a>
+                <a href="https://xebia.com/services/" class="nav-link">Services</a>
+                <a href="../index.html" class="nav-link active">Careers</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main job-detail">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Back to all positions</a>
+
+            <div class="job-detail-header">
+                <span class="job-department">Data & AI</span>
+                <h1 class="job-detail-title">{{.Offer.Title}}</h1>
+                <div class="job-detail-meta">
+                    <span class="meta-item">
+                        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 0C5.24 0 3 2.24 3 5c0 3.75 5 11 5 11s5-7.25 5-11c0-2.76-2.24-5-5-5zm0 7.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
+                        </svg>
+                        {{.Offer.GetLocationString}}
+                    </span>
+                    <span class="meta-item">
+                        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M14 4h-3V3c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v1H2c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7 3h2v1H7V3z"/>
+                        </svg>
+                        {{.Offer.GetEmploymentType}}
+                    </span>
+                    <span class="meta-item">
+                        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M2 2h12v12H2V2zm1 1v10h10V3H3zm2 2h6v1H5V5zm0 2h6v1H5V7zm0 2h4v1H5V9z"/>
+                        </svg>
+                        {{.Offer.GetWorkType}}
+                    </span>
+                </div>
+            </div>
+
+            <div class="job-content-grid">
+                <div class="job-description">
+                    <section class="description-section">
+                        <h2>About this role</h2>
+                        <div class="prose">
+                            {{safeHTML .Offer.Description}}
+                        </div>
+                    </section>
+
+                    {{if .Offer.Requirements}}
+                    <section class="description-section">
+                        <h2>Requirements</h2>
+                        <div class="prose">
+                            {{safeHTML .Offer.Requirements}}
+                        </div>
+                    </section>
+                    {{end}}
+                </div>
+
+                <aside class="job-sidebar">
+                    <div class="apply-card">
+                        <h3>Apply for this position</h3>
+                        <form id="application-form" class="apply-form" data-offer-slug="{{.Offer.Slug}}">
+                            <div class="form-group">
+                                <label for="name">Full name *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Email *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+
+                            {{if ne .Offer.OptionsPhone "off"}}
+                            <div class="form-group">
+                                <label for="phone">Phone{{if eq .Offer.OptionsPhone "required"}} *{{end}}</label>
+                                <input type="tel" id="phone" name="phone" {{if eq .Offer.OptionsPhone "required"}}required{{end}}>
+                            </div>
+                            {{end}}
+
+                            {{if ne .Offer.OptionsCV "off"}}
+                            <div class="form-group">
+                                <label for="cv">Resume/CV{{if eq .Offer.OptionsCV "required"}} *{{end}}</label>
+                                <input type="file" id="cv" name="cv" accept=".pdf,.doc,.docx" {{if eq .Offer.OptionsCV "required"}}required{{end}}>
+                                <span class="file-hint">PDF, DOC, or DOCX (max 10MB)</span>
+                            </div>
+                            {{end}}
+
+                            {{if ne .Offer.OptionsCoverLetter "off"}}
+                            <div class="form-group">
+                                <label for="cover_letter">Cover letter{{if eq .Offer.OptionsCoverLetter "required"}} *{{end}}</label>
+                                <textarea id="cover_letter" name="cover_letter" rows="4" {{if eq .Offer.OptionsCoverLetter "required"}}required{{end}}></textarea>
+                            </div>
+                            {{end}}
+
+                            {{range .Offer.OpenQuestions}}
+                            <div class="form-group">
+                                <label for="question_{{.ID}}">{{.Body}}{{if .Required}} *{{end}}</label>
+                                {{if eq .Kind "text"}}
+                                <input type="text" id="question_{{.ID}}" name="question_{{.ID}}" data-question-id="{{.ID}}" {{if .Required}}required{{end}}>
+                                {{else if eq .Kind "textarea"}}
+                                <textarea id="question_{{.ID}}" name="question_{{.ID}}" rows="3" data-question-id="{{.ID}}" {{if .Required}}required{{end}}></textarea>
+                                {{else if eq .Kind "select"}}
+                                <select id="question_{{.ID}}" name="question_{{.ID}}" data-question-id="{{.ID}}" {{if .Required}}required{{end}}>
+                                    <option value="">Select an option</option>
+                                    {{range .GetOptions}}
+                                    <option value="{{.}}">{{.}}</option>
+                                    {{end}}
+                                </select>
+                                {{else if eq .Kind "boolean"}}
+                                <select id="question_{{.ID}}" name="question_{{.ID}}" data-question-id="{{.ID}}" {{if .Required}}required{{end}}>
+                                    <option value="">Select an option</option>
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
+                                </select>
+                                {{else if eq .Kind "multi_select"}}
+                                <div class="checkbox-group" data-question-id="{{.ID}}">
+                                    {{range .GetOptions}}
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="question_{{$.ID}}[]" value="{{.}}">
+                                        {{.}}
+                                    </label>
+                                    {{end}}
+                                </div>
+                                {{end}}
+                            </div>
+                            {{end}}
+
+                            <div class="form-group checkbox-consent">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="consent" name="consent" required>
+                                    I agree to the <a href="https://xebia.com/privacy-policy/" target="_blank">privacy policy</a> *
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn-apply">Submit application</button>
+
+                            <div id="form-status" class="form-status"></div>
+                        </form>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="footer-logo">xebia</span>
+                    <p class="footer-tagline">Transforming businesses through technology excellence.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="https://xebia.com/privacy-policy/" class="footer-link">Privacy Policy</a>
+                    <a href="https://xebia.com/contact/" class="footer-link">Contact</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Xebia. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../static/app.js"></script>
+</body>
+</html>

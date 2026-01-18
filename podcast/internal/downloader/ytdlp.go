@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -172,26 +173,55 @@ func (d *Downloader) DownloadAudio(ctx context.Context, url string) (string, *Vi
 	cmd := exec.CommandContext(ctx, d.ytdlpPath, args...)
 	cmd.Dir = downloadDir
 
+	log.Printf("Running yt-dlp in directory: %s", downloadDir)
+	log.Printf("yt-dlp args: %v", args)
+
 	output, err := cmd.CombinedOutput()
+	log.Printf("yt-dlp output: %s", string(output))
 	if err != nil {
 		return "", nil, fmt.Errorf("yt-dlp download failed: %s, output: %s", err, string(output))
 	}
 
+	// List all files in directory for debugging
+	entries, _ := os.ReadDir(downloadDir)
+	log.Printf("Files in download directory after yt-dlp:")
+	for _, entry := range entries {
+		log.Printf("  - %s", entry.Name())
+	}
+
 	// Find the audio file
-	audioFile := filepath.Join(downloadDir, fmt.Sprintf("%s.%s", videoID, d.audioFormat))
+	expectedFile := fmt.Sprintf("%s.%s", videoID, d.audioFormat)
+	audioFile := filepath.Join(downloadDir, expectedFile)
+	log.Printf("Looking for audio file: %s", expectedFile)
+
 	if _, err := os.Stat(audioFile); os.IsNotExist(err) {
+		log.Printf("Expected file not found, searching for any .%s file", d.audioFormat)
 		// Try to find any audio file in the directory
-		entries, _ := os.ReadDir(downloadDir)
 		for _, entry := range entries {
 			if strings.HasSuffix(entry.Name(), "."+d.audioFormat) {
 				audioFile = filepath.Join(downloadDir, entry.Name())
+				log.Printf("Found audio file: %s", entry.Name())
 				break
 			}
 		}
 	}
 
 	if _, err := os.Stat(audioFile); os.IsNotExist(err) {
-		return "", nil, fmt.Errorf("audio file not found after download")
+		// Try finding any common audio format
+		audioExtensions := []string{".mp3", ".m4a", ".aac", ".opus", ".webm", ".ogg"}
+		for _, entry := range entries {
+			for _, ext := range audioExtensions {
+				if strings.HasSuffix(entry.Name(), ext) {
+					audioFile = filepath.Join(downloadDir, entry.Name())
+					log.Printf("Found audio file with different extension: %s", entry.Name())
+					break
+				}
+			}
+		}
+	}
+
+	if _, err := os.Stat(audioFile); os.IsNotExist(err) {
+		return "", nil, fmt.Errorf("audio file not found after download, expected format: %s", d.audioFormat)
 	}
 
 	// Parse video info from JSON file

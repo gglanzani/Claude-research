@@ -53,10 +53,16 @@ func main() {
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)
 
+	// Add request logging middleware
+	loggedMux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Incoming request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		mux.ServeHTTP(w, r)
+	})
+
 	// Create server
 	server := &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      mux,
+		Addr:         "0.0.0.0:" + cfg.Port,
+		Handler:      loggedMux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

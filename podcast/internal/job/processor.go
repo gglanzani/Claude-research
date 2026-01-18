@@ -68,16 +68,20 @@ func NewProcessor(cfg *config.Config, store storage.Storage, feedManager *rss.Fe
 
 // Start starts the job processor
 func (p *Processor) Start(ctx context.Context) {
+	log.Printf("Starting job processor...")
 	// Initialize downloader
 	dl, err := downloader.New(p.cfg)
 	if err != nil {
 		log.Printf("Warning: downloader initialization failed: %v", err)
 		log.Println("Jobs will fail until yt-dlp is available")
+	} else {
+		log.Printf("Downloader initialized successfully")
 	}
 	p.downloader = dl
 
 	p.wg.Add(1)
 	go p.worker(ctx)
+	log.Printf("Job processor worker started")
 }
 
 // Stop stops the job processor
@@ -107,10 +111,13 @@ func (p *Processor) Submit(youtubeURL, title, description, author string) (*Job,
 	p.jobs[job.ID] = job
 	p.mu.Unlock()
 
+	log.Printf("Submitting job %s to queue", job.ID)
 	select {
 	case p.queue <- job:
+		log.Printf("Job %s queued successfully", job.ID)
 		return job, nil
 	default:
+		log.Printf("Job queue is full!")
 		return nil, fmt.Errorf("job queue is full")
 	}
 }
@@ -131,14 +138,18 @@ func (p *Processor) GetJob(id string) (*Job, bool) {
 // worker processes jobs from the queue
 func (p *Processor) worker(ctx context.Context) {
 	defer p.wg.Done()
+	log.Printf("Worker started and waiting for jobs...")
 
 	for {
 		select {
 		case <-p.stopCh:
+			log.Printf("Worker received stop signal")
 			return
 		case <-ctx.Done():
+			log.Printf("Worker context cancelled")
 			return
 		case job := <-p.queue:
+			log.Printf("Worker picked up job %s from queue", job.ID)
 			p.processJob(ctx, job)
 		}
 	}

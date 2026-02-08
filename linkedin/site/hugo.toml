@@ -1,0 +1,15 @@
+baseURL = 'https://example.org/'
+languageCode = 'en-us'
+title = 'LinkedIn Posts'
+theme = 'hugola'
+author = 'LinkedIn'
+
+[pagination]
+  pagerSize = 10
+
+[params]
+  Name = "LinkedIn Posts"
+  Domain = "/"
+
+  [params.Sidebar]
+    Posts = "/posts/"

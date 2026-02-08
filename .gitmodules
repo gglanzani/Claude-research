@@ -1,0 +1,6 @@
+[submodule "linkedin/site/linkedin/site/themes/hugola"]
+	path = linkedin/site/linkedin/site/themes/hugola
+	url = https://github.com/gglanzani/hugola.git
+[submodule "linkedin/site/themes/hugola"]
+	path = linkedin/site/themes/hugola
+	url = https://github.com/gglanzani/hugola.git

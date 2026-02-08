@@ -2,6 +2,7 @@
 """Monitor UniFi client signal strength and send notifications via Apprise."""
 
 import argparse
+import datetime
 import logging
 import sys
 import time
@@ -110,6 +111,18 @@ def build_apprise(global_urls: list[str],
     return ap
 
 
+def in_active_window(start_hour: int, end_hour: int) -> bool:
+    """Check if the current local time falls within [start_hour, end_hour).
+
+    Supports overnight windows (e.g. start=22, end=7 means 22:00-06:59).
+    """
+    hour = datetime.datetime.now().hour
+    if start_hour <= end_hour:
+        return start_hour <= hour < end_hour
+    # Wraps past midnight (e.g. 22 -> 7).
+    return hour >= start_hour or hour < end_hour
+
+
 def monitor(config: dict) -> None:  # noqa: C901
     """Main polling loop."""
     uc = config["unifi"]
@@ -135,6 +148,7 @@ def monitor(config: dict) -> None:  # noqa: C901
         "title", "UniFi Signal Alert"
     )
     global_urls = config.get("apprise_urls", [])
+    active_hours = config.get("notifications", {}).get("active_hours")
 
     # Track last alert time per (device_mac, ap_mac) to enforce cooldown.
     last_alert: dict[tuple[str, str], float] = {}
@@ -159,6 +173,12 @@ def monitor(config: dict) -> None:  # noqa: C901
                 client.login()
             except Exception:
                 log.exception("Re-login failed")
+            time.sleep(poll_interval)
+            continue
+
+        if active_hours and not in_active_window(
+            active_hours["start"], active_hours["end"]
+        ):
             time.sleep(poll_interval)
             continue
 

@@ -57,3 +57,9 @@ notifications:
   cooldown: 300
   # Title for notifications
   title: "UniFi Signal Alert"
+  # Only send notifications during this time window (local time, 24h format).
+  # Supports overnight ranges (e.g. 22 to 7 means 22:00–06:59).
+  # Omit or remove to notify at any time.
+  active_hours:
+    start: 22
+    end: 7

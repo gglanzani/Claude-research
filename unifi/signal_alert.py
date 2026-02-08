@@ -8,8 +8,7 @@ import time
 from pathlib import Path
 
 import apprise
-import requests
-import urllib3
+import httpx
 import yaml
 
 logging.basicConfig(
@@ -33,9 +32,7 @@ class UnifiClient:
         self.username = username
         self.password = password
         self.verify_ssl = verify_ssl
-        self.session = requests.Session()
-        if not verify_ssl:
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        self.session = httpx.Client(verify=verify_ssl)
 
     # ---- auth -------------------------------------------------------------
 
@@ -46,7 +43,6 @@ class UnifiClient:
             resp = self.session.post(
                 f"{self.base_url}{path}",
                 json={"username": self.username, "password": self.password},
-                verify=self.verify_ssl,
             )
             if resp.status_code == 200:
                 log.info("Logged in to UniFi controller at %s", self.base_url)
@@ -61,10 +57,7 @@ class UnifiClient:
         )
 
     def logout(self) -> None:
-        self.session.post(
-            f"{self.base_url}/api/logout",
-            verify=self.verify_ssl,
-        )
+        self.session.post(f"{self.base_url}/api/logout")
 
     # ---- data -------------------------------------------------------------
 
@@ -73,7 +66,6 @@ class UnifiClient:
         # UDM-based controllers proxy network API under /proxy/network.
         test = self.session.get(
             f"{self.base_url}/proxy/network/api/s/{self.site}/self",
-            verify=self.verify_ssl,
         )
         if test.status_code == 200:
             return "/proxy/network"
@@ -83,7 +75,7 @@ class UnifiClient:
         """Return list of active wireless clients with signal information."""
         prefix = self._api_prefix()
         url = f"{self.base_url}{prefix}/api/s/{self.site}/stat/sta"
-        resp = self.session.get(url, verify=self.verify_ssl)
+        resp = self.session.get(url)
         resp.raise_for_status()
         return resp.json().get("data", [])
 
@@ -91,7 +83,7 @@ class UnifiClient:
         """Return a map of AP MAC -> AP name for friendly display."""
         prefix = self._api_prefix()
         url = f"{self.base_url}{prefix}/api/s/{self.site}/stat/device"
-        resp = self.session.get(url, verify=self.verify_ssl)
+        resp = self.session.get(url)
         resp.raise_for_status()
         devices = resp.json().get("data", [])
         return {d["mac"]: d.get("name", d["mac"]) for d in devices}
@@ -161,7 +153,7 @@ def monitor(config: dict) -> None:  # noqa: C901
             clients = client.get_active_clients()
             if not ap_names:
                 ap_names = client.get_devices()
-        except requests.exceptions.RequestException:
+        except httpx.HTTPError:
             log.exception("Error fetching data from controller, retrying")
             try:
                 client.login()

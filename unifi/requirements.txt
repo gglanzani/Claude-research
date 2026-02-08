@@ -1,0 +1,3 @@
+apprise
+pyyaml
+requests

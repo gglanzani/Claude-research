@@ -1,0 +1,59 @@
+# UniFi Controller connection settings
+unifi:
+  host: "https://192.168.1.1"       # UniFi controller URL
+  port: 443                          # 443 for UDM/CloudKey Gen2+, 8443 for legacy
+  username: "admin"
+  password: "your-password"
+  site: "default"                    # UniFi site name
+  verify_ssl: false                  # Set true if using valid SSL cert
+
+# Polling interval in seconds
+poll_interval: 30
+
+# Devices to monitor.
+# Each entry maps a friendly name to its MAC address, the signal threshold
+# (in dBm — closer to 0 is stronger), and optional per-device apprise URLs.
+#
+# Signal strength reference:
+#   -30 dBm  = excellent (very close to AP)
+#   -50 dBm  = great
+#   -67 dBm  = good (minimum for streaming)
+#   -70 dBm  = acceptable
+#   -80 dBm  = poor
+#   -90 dBm  = unusable
+#
+# The threshold is the *minimum* signal strength (i.e. the value must be
+# greater-or-equal, meaning closer to 0). For example, a threshold of -50
+# triggers when signal is -50, -45, -30, etc. (strong signal detected).
+devices:
+  - name: "Giovanni's iPhone"
+    mac: "AA:BB:CC:DD:EE:FF"
+    signal_threshold: -50            # notify when signal >= -50 dBm (strong)
+    # Optional: only notify on specific APs (by AP name or MAC).
+    # If omitted, any AP triggers the alert.
+    access_points: []
+    # Optional: per-device apprise URLs (in addition to global ones)
+    apprise_urls: []
+
+  - name: "Living Room iPad"
+    mac: "11:22:33:44:55:66"
+    signal_threshold: -60
+    access_points: ["Living Room AP"]
+    apprise_urls: []
+
+# Global Apprise notification URLs.
+# See https://github.com/caronc/apprise/wiki for supported services.
+# Examples:
+#   - "tgram://bot_token/chat_id"          (Telegram)
+#   - "slack://TokenA/TokenB/TokenC/#chan"  (Slack)
+#   - "mailto://user:pass@gmail.com"       (Email)
+#   - "json://hostname/path"               (Generic JSON webhook)
+apprise_urls:
+  - "tgram://bot_token/chat_id"
+
+# Notification settings
+notifications:
+  # Minimum seconds between repeated alerts for the same device+AP pair.
+  cooldown: 300
+  # Title for notifications
+  title: "UniFi Signal Alert"

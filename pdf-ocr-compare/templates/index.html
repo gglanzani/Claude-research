@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF OCR Compare</title>
+<style>
+  :root {
+    --bg: #1e1e2e;
+    --surface: #282840;
+    --border: #3b3b5c;
+    --text: #cdd6f4;
+    --text-dim: #7f849c;
+    --accent: #89b4fa;
+    --accent-hover: #74c7ec;
+    --green: #a6e3a1;
+    --red: #f38ba8;
+    --yellow: #f9e2af;
+    --panel-bg: #1e1e2e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Top bar */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 14px; font-weight: 600; color: var(--accent); }
+  header .actions { display: flex; gap: 8px; align-items: center; }
+  header .actions button, header .actions input {
+    font-family: inherit;
+    font-size: 12px;
+  }
+
+  /* Main layout: 3 columns */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* PDF panels */
+  .pdf-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+  }
+  .pdf-panel:last-of-type { border-right: none; }
+  .panel-header {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pdf-panel iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #fff;
+  }
+
+  /* Right sidebar: editor + chat */
+  .sidebar {
+    width: 480px;
+    min-width: 360px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* Editor panel */
+  .editor-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .editor-panel textarea {
+    flex: 1;
+    background: var(--panel-bg);
+    color: var(--text);
+    border: none;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    tab-size: 2;
+  }
+  .editor-actions {
+    display: flex;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* Chat panel */
+  .chat-panel {
+    height: 320px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .chat-messages .msg {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+  }
+  .chat-messages .msg.user {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .chat-messages .msg.assistant {
+    background: #1a2a1a;
+    border: 1px solid #2a3a2a;
+  }
+  .chat-messages .msg.error {
+    background: #2a1a1a;
+    border: 1px solid #3a2a2a;
+    color: var(--red);
+  }
+  .chat-messages .msg pre {
+    background: #111;
+    padding: 6px 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 6px 0;
+    font-size: 12px;
+  }
+  .chat-messages .msg .apply-btn {
+    margin-top: 6px;
+  }
+  .chat-input-row {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .chat-input-row input[type="text"] {
+    flex: 1;
+  }
+
+  /* Shared input/button styles */
+  button {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.primary {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  button.success { background: #2a3a2a; border-color: var(--green); color: var(--green); }
+
+  input[type="text"], input[type="password"] {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    color: var(--text);
+    outline: none;
+  }
+  input:focus { border-color: var(--accent); }
+
+  /* Resizer between editor and chat */
+  .resize-handle {
+    height: 4px;
+    background: var(--border);
+    cursor: ns-resize;
+    flex-shrink: 0;
+  }
+  .resize-handle:hover { background: var(--accent); }
+
+  /* Status badge */
+  .status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .status.ok { background: #2a3a2a; color: var(--green); }
+  .status.err { background: #2a1a1a; color: var(--red); }
+  .status.loading { background: #2a2a1a; color: var(--yellow); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* Page sync controls */
+  .page-sync {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .page-sync input[type="number"] {
+    width: 50px;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    color: var(--text);
+    outline: none;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>PDF OCR Compare</h1>
+  <div class="actions">
+    <label style="font-size:11px; color:var(--text-dim)">Gemini Key:</label>
+    <input type="password" id="gemini-key" placeholder="paste key or set GEMINI_API_KEY" style="width:220px">
+    <span id="compile-status" class="status ok">ready</span>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Original PDF -->
+  <div class="pdf-panel">
+    <div class="panel-header">
+      <span>Original PDF</span>
+      <div class="page-sync">
+        <button onclick="prevPage('original')">&lt;</button>
+        <span>Page <input type="number" id="original-page" value="1" min="1" onchange="goToPage('original', this.value)"></span>
+        <span id="original-page-count">/ ?</span>
+        <button onclick="nextPage('original')">&gt;</button>
+      </div>
+    </div>
+    <canvas id="original-canvas" style="flex:1;width:100%;overflow:auto"></canvas>
+  </div>
+
+  <!-- Compiled PDF -->
+  <div class="pdf-panel">
+    <div class="panel-header">
+      <span>Compiled (Typst)</span>
+      <div class="page-sync">
+        <button onclick="prevPage('compiled')">&lt;</button>
+        <span>Page <input type="number" id="compiled-page" value="1" min="1" onchange="goToPage('compiled', this.value)"></span>
+        <span id="compiled-page-count">/ ?</span>
+        <button onclick="nextPage('compiled')">&gt;</button>
+      </div>
+    </div>
+    <canvas id="compiled-canvas" style="flex:1;width:100%;overflow:auto"></canvas>
+  </div>
+
+  <!-- Sidebar: Editor + Chat -->
+  <div class="sidebar">
+    <div class="editor-panel">
+      <div class="panel-header">
+        <span>Typst Source</span>
+      </div>
+      <textarea id="typst-editor" spellcheck="false"></textarea>
+      <div class="editor-actions">
+        <button class="primary" onclick="recompile()">Compile &amp; Preview</button>
+        <button onclick="saveToDisk()">Save to Disk</button>
+      </div>
+    </div>
+
+    <div class="resize-handle" id="resize-handle"></div>
+
+    <div class="chat-panel" id="chat-panel">
+      <div class="panel-header"><span>Gemini Chat (sed rules)</span></div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask Gemini for sed rules..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="primary" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PDF.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.mjs" type="module"></script>
+<script type="module">
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
+
+// State
+const state = {
+  original: { pdf: null, page: 1, total: 0 },
+  compiled: { pdf: null, page: 1, total: 0 },
+};
+
+// Expose to global for inline handlers
+window.pdfjsLib = pdfjsLib;
+window.pdfState = state;
+
+async function loadPdf(url, which) {
+  const pdf = await pdfjsLib.getDocument(url).promise;
+  state[which].pdf = pdf;
+  state[which].total = pdf.numPages;
+  state[which].page = 1;
+  document.getElementById(`${which}-page`).value = 1;
+  document.getElementById(`${which}-page-count`).textContent = `/ ${pdf.numPages}`;
+  await renderPage(which);
+}
+
+async function renderPage(which) {
+  const s = state[which];
+  if (!s.pdf) return;
+  const page = await s.pdf.getPage(s.page);
+  const canvas = document.getElementById(`${which}-canvas`);
+  const ctx = canvas.getContext('2d');
+  // Fit to panel width
+  const panel = canvas.parentElement;
+  const desiredWidth = panel.clientWidth;
+  const unscaledViewport = page.getViewport({ scale: 1 });
+  const scale = desiredWidth / unscaledViewport.width;
+  const viewport = page.getViewport({ scale });
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  canvas.style.height = 'auto';
+  await page.render({ canvasContext: ctx, viewport }).promise;
+}
+
+window.goToPage = async function(which, p) {
+  const s = state[which];
+  const page = Math.max(1, Math.min(parseInt(p) || 1, s.total));
+  s.page = page;
+  document.getElementById(`${which}-page`).value = page;
+  await renderPage(which);
+};
+
+window.nextPage = function(which) {
+  const s = state[which];
+  if (s.page < s.total) window.goToPage(which, s.page + 1);
+};
+
+window.prevPage = function(which) {
+  const s = state[which];
+  if (s.page > 1) window.goToPage(which, s.page - 1);
+};
+
+// Load initial data
+async function init() {
+  // Load typst source
+  const resp = await fetch('/api/typst-source');
+  const data = await resp.json();
+  document.getElementById('typst-editor').value = data.source;
+
+  // Load original PDF
+  await loadPdf('/api/original-pdf', 'original');
+
+  // Load compiled PDF
+  try {
+    await loadPdf('/api/compiled-pdf', 'compiled');
+    setStatus('ok', 'compiled');
+  } catch (e) {
+    setStatus('err', e.message);
+  }
+}
+
+window.recompile = async function() {
+  setStatus('loading', 'compiling...');
+  const source = document.getElementById('typst-editor').value;
+
+  // Update source on server
+  await fetch('/api/typst-source', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source }),
+  });
+
+  // Fetch compiled PDF
+  try {
+    const resp = await fetch('/api/compiled-pdf');
+    if (!resp.ok) {
+      const err = await resp.json();
+      setStatus('err', err.error || 'Compilation failed');
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    await loadPdf(url, 'compiled');
+    setStatus('ok', 'compiled');
+  } catch (e) {
+    setStatus('err', e.message);
+  }
+};
+
+window.saveToDisk = async function() {
+  const source = document.getElementById('typst-editor').value;
+  await fetch('/api/typst-source', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source }),
+  });
+  const resp = await fetch('/api/save', { method: 'POST' });
+  const data = await resp.json();
+  if (data.ok) {
+    setStatus('ok', 'saved');
+  } else {
+    setStatus('err', data.error);
+  }
+};
+
+window.sendChat = async function() {
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = '';
+
+  const messagesDiv = document.getElementById('chat-messages');
+  appendMsg('user', message);
+
+  const apiKey = document.getElementById('gemini-key').value;
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, api_key: apiKey }),
+    });
+    const data = await resp.json();
+    if (data.error) {
+      appendMsg('error', data.error);
+      return;
+    }
+    appendAssistantMsg(data.response);
+  } catch (e) {
+    appendMsg('error', e.message);
+  }
+};
+
+function appendMsg(cls, text) {
+  const messagesDiv = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${cls}`;
+  div.textContent = text;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function appendAssistantMsg(text) {
+  const messagesDiv = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+
+  // Extract sed rules (lines starting with s/ or s|, etc.)
+  const lines = text.split('\n');
+  const rules = [];
+  const displayLines = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^s./.test(trimmed) && !trimmed.startsWith('#')) {
+      rules.push(trimmed);
+      displayLines.push(`<pre>${escapeHtml(trimmed)}</pre>`);
+    } else {
+      displayLines.push(escapeHtml(trimmed));
+    }
+  }
+  div.innerHTML = displayLines.join('<br>');
+
+  if (rules.length > 0) {
+    const btn = document.createElement('button');
+    btn.className = 'apply-btn success';
+    btn.textContent = `Apply ${rules.length} rule(s)`;
+    btn.onclick = async () => {
+      const resp = await fetch('/api/apply-sed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rules }),
+      });
+      const data = await resp.json();
+      if (data.source !== undefined) {
+        document.getElementById('typst-editor').value = data.source;
+        appendMsg('assistant', `Applied ${rules.length} rule(s). Click "Compile & Preview" to see changes.`);
+      }
+    };
+    div.appendChild(btn);
+  }
+
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function setStatus(type, text) {
+  const el = document.getElementById('compile-status');
+  el.className = `status ${type}`;
+  el.textContent = text;
+}
+
+// Resize handle for chat/editor split
+const resizeHandle = document.getElementById('resize-handle');
+const chatPanel = document.getElementById('chat-panel');
+let isResizing = false;
+resizeHandle.addEventListener('mousedown', (e) => {
+  isResizing = true;
+  e.preventDefault();
+});
+document.addEventListener('mousemove', (e) => {
+  if (!isResizing) return;
+  const sidebar = chatPanel.parentElement;
+  const sidebarRect = sidebar.getBoundingClientRect();
+  const newHeight = sidebarRect.bottom - e.clientY;
+  chatPanel.style.height = Math.max(150, Math.min(newHeight, sidebarRect.height - 200)) + 'px';
+});
+document.addEventListener('mouseup', () => { isResizing = false; });
+
+// Window resize re-renders
+window.addEventListener('resize', () => {
+  renderPage('original');
+  renderPage('compiled');
+});
+
+init();
+</script>
+</body>
+</html>

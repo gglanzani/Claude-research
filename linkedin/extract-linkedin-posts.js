@@ -132,7 +132,9 @@
       videos: [],
       documents: [],
       links: [],
-      reactions: "",
+      likes: 0,
+      views: 0,
+      url: "",
       comments: [],
     };
 
@@ -195,12 +197,39 @@
       }
     });
 
-    // -- Reactions count --
+    // -- Likes count --
     const reactionsEl = postEl.querySelector(
       ".social-details-social-counts__reactions-count, .social-details-social-counts span:first-child"
     );
     if (reactionsEl) {
-      post.reactions = reactionsEl.innerText.trim();
+      const likesText = reactionsEl.innerText.trim().replace(/,/g, "");
+      post.likes = parseInt(likesText, 10) || 0;
+    }
+
+    // -- Views count --
+    const viewsEl = postEl.querySelector(
+      ".analytics-entry-point span, .feed-shared-analytics-entry-point span, span[class*='impressions'], .social-details-social-counts__impressions-count"
+    );
+    if (viewsEl) {
+      const viewsText = viewsEl.innerText.trim().replace(/,/g, "");
+      post.views = parseInt(viewsText, 10) || 0;
+    }
+
+    // -- Original post URL --
+    const linkEl = postEl.querySelector(
+      'a[href*="/feed/update/"], a[data-tracking-control-name="feed_post_share_link"], a[href*="urn:li:activity"]'
+    );
+    if (linkEl) {
+      const href = linkEl.href;
+      post.url = href.split("?")[0];
+    } else {
+      const urn = postEl.getAttribute("data-urn") || postEl.getAttribute("data-id") || "";
+      if (urn) {
+        const activityId = urn.match(/urn:li:activity:(\d+)/);
+        if (activityId) {
+          post.url = `https://www.linkedin.com/feed/update/urn:li:activity:${activityId[1]}`;
+        }
+      }
     }
 
     // -- Comments --
@@ -235,10 +264,13 @@
 
     let md = `+++
 title = "${title}"
-date = "${post.date}"
+date = "${post.date}T12:00:00"
 draft = false
 [params]
   source = "linkedin"
+  likes = ${post.likes}
+  views = ${post.views}
+  url = "${post.url}"
 +++
 
 ${post.text}
@@ -256,7 +288,7 @@ ${post.text}
     if (post.videos.length > 0) {
       md += "\n\n## Video\n\n";
       post.videos.forEach((vid) => {
-        md += `{{< video src="${vid}" >}}\n\n`;
+        md += `<video src="${vid}" controls></video>\n\n`;
       });
     }
 

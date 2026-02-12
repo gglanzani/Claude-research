@@ -1,6 +1,6 @@
 +++
 title = "Example LinkedIn Post"
-date = "2025-01-15"
+date = "2025-01-15T12:00:00"
 draft = true
 [params]
   source = "linkedin"

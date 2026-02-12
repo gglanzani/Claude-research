@@ -1,0 +1,27 @@
+  <article>
+  <header>
+    <h1>
+      <a href="{{ .Permalink }}">{{ .Title }}</a>
+    </h1>
+  </header>
+
+    {{ partial "is_link.html" . }}
+
+    {{ .Content }}
+  <footer>
+      Posted on <em>{{ .Date.Format "02 Jan 2006" }}</em>
+      {{ with .Params.likes }}· {{ . }} likes{{ end }}
+      {{ with .Params.views }}· {{ . }} views{{ end }}
+      {{ with .Params.url }}· <a href="{{ . }}">original</a>{{ end }}
+    <p>
+      {{ if .Params.tags }}
+      <span class="tags">
+        {{ range first 3 .Params.tags }}
+          <a href="/tags/{{ . | urlize }}/">#{{ . }}</a>
+        {{ end }}
+      </span>
+      {{ end }}
+    </p>
+  </footer>
+
+  </article>

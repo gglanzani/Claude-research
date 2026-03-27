@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(for f in *.md)",
+      "Bash(do sed -i '' 's/^date = \"\"\\\\\\([0-9]\\\\{4\\\\}-[0-9]\\\\{2\\\\}-[0-9]\\\\{2\\\\}\\\\\\)\"\"$/date = \"\"\\\\1T12:00:00\"\"/' \"$f\")",
+      "Bash(done)",
+      "Bash(git submodule add:*)"
+    ]
+  }
+}

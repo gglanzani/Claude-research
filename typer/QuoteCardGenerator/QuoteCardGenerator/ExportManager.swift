@@ -30,49 +30,84 @@ class ExportManager {
 
         switch format {
         case .png:
-            exportBitmap(state: state, url: url, format: .png)
+            if let data = renderBitmapData(state: state, fileType: .png) {
+                try? data.write(to: url)
+            }
         case .webp:
-            exportBitmap(state: state, url: url, format: .png) // fallback: macOS doesn't natively encode WebP
-            // Convert with sips if available
-            convertToWebP(from: url)
+            exportWebP(state: state, to: url)
         case .svg:
-            exportSVG(state: state, url: url)
+            let svg = buildSVG(state: state)
+            try? svg.write(to: url, atomically: true, encoding: .utf8)
         }
     }
 
-    private static func exportBitmap(state: CardState, url: URL, format: NSBitmapImageRep.FileType) {
-        let scale: CGFloat = 2.0 // Retina quality
-        let size = CGSize(width: state.selectedSize.width, height: state.selectedSize.height)
+    // MARK: - Bitmap rendering (correct 2× HiDPI)
+
+    private static func renderBitmapData(state: CardState, fileType: NSBitmapImageRep.FileType) -> Data? {
+        let w = Int(state.selectedSize.width)
+        let h = Int(state.selectedSize.height)
+        let scale = 2
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(
+            data: nil,
+            width: w * scale,
+            height: h * scale,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+
+        ctx.scaleBy(x: CGFloat(scale), y: CGFloat(scale))
 
         let hostingView = NSHostingView(rootView: ExportableCardView(state: state))
-        hostingView.frame = CGRect(origin: .zero, size: size)
+        hostingView.frame = CGRect(origin: .zero, size: CGSize(width: w, height: h))
         hostingView.layout()
 
-        guard let bitmapRep = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds) else { return }
-        bitmapRep.size = CGSize(width: size.width * scale, height: size.height * scale)
-        hostingView.cacheDisplay(in: hostingView.bounds, to: bitmapRep)
+        let nsCtx = NSGraphicsContext(cgContext: ctx, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = nsCtx
+        hostingView.displayIgnoringOpacity(hostingView.bounds, in: nsCtx)
+        NSGraphicsContext.restoreGraphicsState()
 
-        // Scale up for HiDPI
-        let image = NSImage(size: CGSize(width: size.width * scale, height: size.height * scale))
-        image.addRepresentation(bitmapRep)
-
-        if let data = bitmapRep.representation(using: format, properties: [.compressionFactor: 0.95]) {
-            try? data.write(to: url)
-        }
+        guard let cgImage = ctx.makeImage() else { return nil }
+        let rep = NSBitmapImageRep(cgImage: cgImage)
+        rep.size = CGSize(width: w, height: h)     // set logical points size for metadata
+        return rep.representation(using: fileType, properties: [.compressionFactor: 0.95])
     }
 
-    private static func convertToWebP(from url: URL) {
-        // sips on macOS can convert to webp on macOS 14+
+    // MARK: - WebP via sips (macOS 14+)
+    // Write PNG to a temp file, then let sips convert it to the final destination.
+
+    private static func exportWebP(state: CardState, to destination: URL) {
+        guard let pngData = renderBitmapData(state: state, fileType: .png) else { return }
+
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("png")
+
+        do {
+            try pngData.write(to: tmp)
+        } catch {
+            return
+        }
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
         let task = Process()
-        task.launchPath = "/usr/bin/sips"
-        task.arguments = ["-s", "format", "webp", url.path, "--out", url.path]
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/sips")
+        task.arguments = [
+            "-s", "format", "webp",
+            tmp.path,
+            "--out", destination.path
+        ]
         try? task.run()
         task.waitUntilExit()
-    }
 
-    private static func exportSVG(state: CardState, url: URL) {
-        let svg = buildSVG(state: state)
-        try? svg.write(to: url, atomically: true, encoding: .utf8)
+        // If sips didn't produce the file (older macOS / failure), fall back to PNG
+        if !FileManager.default.fileExists(atPath: destination.path) {
+            try? pngData.write(to: destination)
+        }
     }
 
     // MARK: - SVG Builder
@@ -114,59 +149,34 @@ class ExportManager {
         case .trailing: textX = w - padding
         }
 
-        // Estimate line breaks
         let avgCharWidth = state.quoteFontSize * 0.55
         let charsPerLine = max(1, Int(CGFloat(availableWidth) / avgCharWidth))
         let wrappedLines = wrapText(quoteText, charsPerLine: charsPerLine)
 
         let quoteLineHeight = state.quoteFontSize + state.lineSpacing
         let quoteTotalHeight = CGFloat(wrappedLines.count) * quoteLineHeight
-
         let startY = CGFloat(h) / 2 - quoteTotalHeight / 2 - state.authorFontSize / 2
 
         var linesXML = ""
         for (i, line) in wrappedLines.enumerated() {
             let dy = i == 0 ? "0" : "\(Int(quoteLineHeight))"
-            linesXML += """
-            <tspan x="\(textX)" dy="\(dy)">\(line)</tspan>
-            """
+            linesXML += "<tspan x=\"\(textX)\" dy=\"\(dy)\">\(line)</tspan>"
         }
 
         let authorY = Int(startY + quoteTotalHeight + state.authorSpacing)
         var dashLine = ""
         if state.quoteDecoration == .dash {
             let dashX = textX - 22
-            dashLine = """
-            <line x1="\(dashX - 16)" y1="\(authorY - Int(state.authorFontSize) / 3)" x2="\(dashX)" y2="\(authorY - Int(state.authorFontSize) / 3)" stroke="\(accentHex)" stroke-width="1.5"/>
-            """
+            dashLine = "<line x1=\"\(dashX - 16)\" y1=\"\(authorY - Int(state.authorFontSize) / 3)\" x2=\"\(dashX)\" y2=\"\(authorY - Int(state.authorFontSize) / 3)\" stroke=\"\(accentHex)\" stroke-width=\"1.5\"/>"
         }
 
         return """
         <?xml version="1.0" encoding="UTF-8"?>
         <svg xmlns="http://www.w3.org/2000/svg" width="\(w)" height="\(h)" viewBox="0 0 \(w) \(h)">
           <rect width="\(w)" height="\(h)" fill="\(bgHex)"/>
-          <text
-            x="\(textX)"
-            y="\(Int(startY))"
-            font-family="\(state.quoteFontName), Georgia, serif"
-            font-size="\(Int(state.quoteFontSize))"
-            font-style="\(quoteFontStyle)"
-            font-weight="\(quoteFontWeight)"
-            fill="\(fgHex)"
-            text-anchor="\(textAnchor)"
-            letter-spacing="\(Int(state.letterSpacing))"
-          >\(linesXML)</text>
+          <text x="\(textX)" y="\(Int(startY))" font-family="\(state.quoteFontName), Georgia, serif" font-size="\(Int(state.quoteFontSize))" font-style="\(quoteFontStyle)" font-weight="\(quoteFontWeight)" fill="\(fgHex)" text-anchor="\(textAnchor)" letter-spacing="\(Int(state.letterSpacing))">\(linesXML)</text>
           \(dashLine)
-          <text
-            x="\(textX)"
-            y="\(authorY)"
-            font-family="\(state.authorFontName), Helvetica Neue, sans-serif"
-            font-size="\(Int(state.authorFontSize))"
-            font-weight="\(authorFontWeight)"
-            fill="\(accentHex)"
-            text-anchor="\(textAnchor)"
-            letter-spacing="1.5"
-          >\(authorText)</text>
+          <text x="\(textX)" y="\(authorY)" font-family="\(state.authorFontName), Helvetica Neue, sans-serif" font-size="\(Int(state.authorFontSize))" font-weight="\(authorFontWeight)" fill="\(accentHex)" text-anchor="\(textAnchor)" letter-spacing="1.5">\(authorText)</text>
         </svg>
         """
     }
@@ -182,11 +192,9 @@ class ExportManager {
     }
 
     private static func wrapText(_ text: String, charsPerLine: Int) -> [String] {
-        // Simple greedy word wrap
         let words = text.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
         var lines: [String] = []
         var current = ""
-
         for word in words {
             if current.isEmpty {
                 current = word

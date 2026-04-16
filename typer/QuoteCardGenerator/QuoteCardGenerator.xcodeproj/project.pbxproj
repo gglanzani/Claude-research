@@ -15,6 +15,7 @@
 		A1000006 /* TypographyPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006 /* TypographyPanelView.swift */; };
 		A1000007 /* LayoutPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000007 /* LayoutPanelView.swift */; };
 		A1000008 /* ExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008 /* ExportManager.swift */; };
+		A1000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000009 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,7 +27,8 @@
 		B1000006 /* TypographyPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographyPanelView.swift; sourceTree = "<group>"; };
 		B1000007 /* LayoutPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutPanelView.swift; sourceTree = "<group>"; };
 		B1000008 /* ExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportManager.swift; sourceTree = "<group>"; };
-		C1000001 /* QuoteCardGenerator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuoteCardGenerator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C1000001 /* Quotr.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quotr.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,7 +42,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		E1000000 /* QuoteCardGenerator */ = {
+		E1000000 = {
 			isa = PBXGroup;
 			children = (
 				E1000001 /* QuoteCardGenerator */,
@@ -59,6 +61,7 @@
 				B1000006 /* TypographyPanelView.swift */,
 				B1000007 /* LayoutPanelView.swift */,
 				B1000008 /* ExportManager.swift */,
+				B1000009 /* Assets.xcassets */,
 			);
 			path = QuoteCardGenerator;
 			sourceTree = "<group>";
@@ -66,7 +69,7 @@
 		E1000002 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C1000001 /* QuoteCardGenerator.app */,
+				C1000001 /* Quotr.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -81,6 +84,7 @@
 				G1000001 /* Sources */,
 				D1000001 /* Frameworks */,
 				G1000002 /* Resources */,
+				G1000003 /* Fix AppIcon */,
 			);
 			buildRules = (
 			);
@@ -88,7 +92,7 @@
 			);
 			name = QuoteCardGenerator;
 			productName = QuoteCardGenerator;
-			productReference = C1000001 /* QuoteCardGenerator.app */;
+			productReference = C1000001 /* Quotr.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -99,7 +103,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					F1000001 = {
 						CreatedOnToolsVersion = 15.0;
@@ -129,10 +133,33 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1000009 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		G1000003 /* Fix AppIcon */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Fix AppIcon";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Resources/AppIcon.icns",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -e\nICONSET_DIR=\"$SRCROOT/QuoteCardGenerator/Assets.xcassets/AppIcon.appiconset\"\nTMP_ICONSET=\"$DERIVED_FILE_DIR/AppIcon.iconset\"\nICNS_OUT=\"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME/Contents/Resources/AppIcon.icns\"\nmkdir -p \"$TMP_ICONSET\"\ncp \"$ICONSET_DIR/AppIcon_16x16.png\"      \"$TMP_ICONSET/icon_16x16.png\"\ncp \"$ICONSET_DIR/AppIcon_16x16@2x.png\"   \"$TMP_ICONSET/icon_16x16@2x.png\"\ncp \"$ICONSET_DIR/AppIcon_32x32.png\"      \"$TMP_ICONSET/icon_32x32.png\"\ncp \"$ICONSET_DIR/AppIcon_64x64.png\"      \"$TMP_ICONSET/icon_32x32@2x.png\"\ncp \"$ICONSET_DIR/AppIcon_128x128.png\"    \"$TMP_ICONSET/icon_128x128.png\"\ncp \"$ICONSET_DIR/AppIcon_128x128@2x.png\" \"$TMP_ICONSET/icon_128x128@2x.png\"\ncp \"$ICONSET_DIR/AppIcon_256x256.png\"    \"$TMP_ICONSET/icon_256x256.png\"\ncp \"$ICONSET_DIR/AppIcon_256x256@2x.png\" \"$TMP_ICONSET/icon_256x256@2x.png\"\ncp \"$ICONSET_DIR/AppIcon_512x512.png\"    \"$TMP_ICONSET/icon_512x512.png\"\ncp \"$ICONSET_DIR/AppIcon_1024x1024.png\"  \"$TMP_ICONSET/icon_512x512@2x.png\"\niconutil --convert icns --output \"$ICNS_OUT\" \"$TMP_ICONSET\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		G1000001 /* Sources */ = {
@@ -159,17 +186,22 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_HARDENED_RUNTIME = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 9AA52ZGC28;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Quotr;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.quotecardgenerator.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.quotr.app;
+				PRODUCT_NAME = Quotr;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -181,17 +213,22 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_HARDENED_RUNTIME = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 9AA52ZGC28;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Quotr;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.quotecardgenerator.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.quotr.app;
+				PRODUCT_NAME = Quotr;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -230,9 +267,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -252,6 +291,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -290,9 +330,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -305,6 +347,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
@@ -332,7 +375,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = H1000001 /* Project object */;
 }

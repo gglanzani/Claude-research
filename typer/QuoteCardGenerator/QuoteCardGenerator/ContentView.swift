@@ -3,6 +3,8 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var state = CardState()
     @State private var selectedTab: Int = 0
+    @State private var zoom: CGFloat = 1.0
+    @State private var zoomBase: CGFloat = 1.0
     @FocusState private var quoteFocused: Bool
     @FocusState private var authorFocused: Bool
 
@@ -68,7 +70,7 @@ struct ContentView: View {
                 .background(.background, in: RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(quoteFocused ? Color.accentColor : Color.separator, lineWidth: 1)
+                        .strokeBorder(quoteFocused ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.separator), lineWidth: 1)
                 )
 
             Label("Author", systemImage: "person")
@@ -82,7 +84,7 @@ struct ContentView: View {
                 .background(.background, in: RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(authorFocused ? Color.accentColor : Color.separator, lineWidth: 1)
+                        .strokeBorder(authorFocused ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.separator), lineWidth: 1)
                 )
                 .onSubmit { quoteFocused = true }
         }
@@ -102,6 +104,28 @@ struct ContentView: View {
 
                 Spacer()
 
+                // Zoom controls
+                HStack(spacing: 4) {
+                    Button { zoom = max(0.1, zoom / 1.25) } label: {
+                        Image(systemName: "minus.magnifyingglass")
+                    }
+                    .buttonStyle(.borderless)
+                    .keyboardShortcut("-", modifiers: .command)
+
+                    Text("\(Int(zoom * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .frame(minWidth: 40)
+                        .onTapGesture(count: 2) { zoom = 1.0 }
+
+                    Button { zoom = min(10.0, zoom * 1.25) } label: {
+                        Image(systemName: "plus.magnifyingglass")
+                    }
+                    .buttonStyle(.borderless)
+                    .keyboardShortcut("=", modifiers: .command)
+                }
+
+                Divider().frame(height: 16)
+
                 ExportButton(state: state)
             }
             .padding(.horizontal, 20)
@@ -111,20 +135,36 @@ struct ContentView: View {
             Divider()
 
             // Preview canvas
-            ScrollView([.horizontal, .vertical]) {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        CardPreviewView(state: state)
-                            .shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 8)
-                        Spacer()
-                    }
-                    Spacer()
+            GeometryReader { geo in
+                let padding: CGFloat = 40
+                let availableW = geo.size.width - padding * 2
+                let availableH = geo.size.height - padding * 2
+                let cardW = state.selectedSize.width
+                let cardH = state.selectedSize.height
+                let fitScale = min(availableW / cardW, availableH / cardH)
+                let scale = fitScale * zoom
+
+                ScrollView([.horizontal, .vertical]) {
+                    CardPreviewView(state: state, previewScale: scale)
+                        .shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 8)
+                        .padding(padding)
+                        .frame(
+                            minWidth: geo.size.width,
+                            minHeight: geo.size.height
+                        )
                 }
-                .frame(minWidth: 500, minHeight: 500)
             }
             .background(Color(NSColor.underPageBackgroundColor))
+            .gesture(
+                MagnificationGesture()
+                    .onChanged { value in
+                        zoom = max(0.1, min(10.0, zoomBase * value))
+                    }
+                    .onEnded { value in
+                        zoom = max(0.1, min(10.0, zoomBase * value))
+                        zoomBase = zoom
+                    }
+            )
         }
     }
 }

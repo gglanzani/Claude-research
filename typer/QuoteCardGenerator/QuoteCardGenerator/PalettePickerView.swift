@@ -38,7 +38,7 @@ struct PalettePickerView: View {
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.caption, design: .monospaced))
                             .frame(width: 80)
-                            .onSubmit { applyHex(hexBackground, to: \.customBackground) }
+                            .onSubmit { applyHex(hexBackground) { state.customBackground = $0 } }
                     }
                     GridRow {
                         Text("Foreground")
@@ -49,13 +49,13 @@ struct PalettePickerView: View {
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.caption, design: .monospaced))
                             .frame(width: 80)
-                            .onSubmit { applyHex(hexForeground, to: \.customForeground) }
+                            .onSubmit { applyHex(hexForeground) { state.customForeground = $0 } }
                     }
                 }
-                .onChange(of: state.customBackground) { _ in
+                .onChange(of: state.customBackground) {
                     hexBackground = state.customBackground.hexString
                 }
-                .onChange(of: state.customForeground) { _ in
+                .onChange(of: state.customForeground) {
                     hexForeground = state.customForeground.hexString
                 }
                 .onAppear {
@@ -68,10 +68,10 @@ struct PalettePickerView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
     }
 
-    private func applyHex(_ hex: String, to keyPath: WritableKeyPath<CardState, Color>) {
+    private func applyHex(_ hex: String, apply: (Color) -> Void) {
         let cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if cleaned.count >= 6 {
-            state[keyPath: keyPath] = Color(hex: cleaned)
+            apply(Color(hex: cleaned))
         }
     }
 }

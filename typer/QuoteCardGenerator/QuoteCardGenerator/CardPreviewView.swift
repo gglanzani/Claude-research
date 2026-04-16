@@ -4,9 +4,11 @@ import AppKit
 struct CardPreviewView: View {
     @ObservedObject var state: CardState
     var isExport: Bool = false
+    var previewScale: CGFloat? = nil
 
     private var scaleFactor: CGFloat {
-        isExport ? 1.0 : 0.35
+        if isExport { return 1.0 }
+        return previewScale ?? 0.35
     }
 
     var body: some View {

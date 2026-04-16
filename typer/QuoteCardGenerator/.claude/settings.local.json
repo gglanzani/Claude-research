@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild -scheme QuoteCardGenerator -destination 'platform=macOS' build)",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Bash(mkdir -p /Users/gio/code/Claude-research/typer/QuoteCardGenerator/QuoteCardGenerator/Assets.xcassets/AppIcon.appiconset)",
+      "Bash(mkdir -p /Users/gio/code/Claude-research/typer/QuoteCardGenerator/QuoteCardGenerator/Assets.xcassets/AccentColor.colorset)",
+      "Bash(python3:*)",
+      "Bash(xcodebuild -project QuoteCardGenerator.xcodeproj -scheme QuoteCardGenerator -configuration Debug build)",
+      "Bash(open:*)",
+      "Bash(sips -g all \"/Users/gio/Library/Developer/Xcode/DerivedData/QuoteCardGenerator-bwjupiuemnumfafyuqkfbvnmfyth/Build/Products/Debug/QuoteCardGenerator.app/Contents/Resources/AppIcon.icns\")",
+      "Bash(/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -kill -r -domain local -domain system -domain user)",
+      "Bash(killall Dock)",
+      "Bash(iconutil --convert icns --output /tmp/test_check.icns \"/Users/gio/code/Claude-research/typer/QuoteCardGenerator/QuoteCardGenerator/Assets.xcassets/AppIcon.appiconset\")",
+      "Bash(rm -rf /tmp/AppIcon.iconset)",
+      "Bash(mkdir /tmp/AppIcon.iconset)",
+      "Bash(cp __TRACKED_VAR__/AppIcon_16x16.png /tmp/AppIcon.iconset/icon_16x16.png)",
+      "Bash(cp __TRACKED_VAR__/AppIcon_16x16@2x.png /tmp/AppIcon.iconset/icon_16x16@2x.png)",
+      "Bash(cp __TRACKED_VAR__/AppIcon_32x32.png /tmp/AppIcon.iconset/icon_32x32.png)",
+      "Bash(cp /tmp/AppIcon.icns /Users/gio/Library/Developer/Xcode/DerivedData/QuoteCardGenerator-bwjupiuemnumfafyuqkfbvnmfyth/Build/Products/Debug/QuoteCardGenerator.app/Contents/Resources/AppIcon.icns)",
+      "Bash(touch /Users/gio/Library/Developer/Xcode/DerivedData/QuoteCardGenerator-bwjupiuemnumfafyuqkfbvnmfyth/Build/Products/Debug/QuoteCardGenerator.app)",
+      "Bash(/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f /Users/gio/Library/Developer/Xcode/DerivedData/QuoteCardGenerator-bwjupiuemnumfafyuqkfbvnmfyth/Build/Products/Debug/QuoteCardGenerator.app)",
+      "Bash(defaults read:*)",
+      "Bash(/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f /Users/gio/Library/Developer/Xcode/DerivedData/QuoteCardGenerator-bwjupiuemnumfafyuqkfbvnmfyth/Build/Products/Debug/Quotr.app)",
+      "Bash(pip3 show:*)",
+      "Bash(pip3 install:*)",
+      "Bash(xcodebuild -scheme QuoteCardGenerator -configuration Debug build)"
+    ]
+  }
+}

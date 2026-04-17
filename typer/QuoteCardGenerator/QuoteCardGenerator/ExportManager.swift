@@ -21,6 +21,13 @@ enum ExportFormat: String, CaseIterable, Identifiable {
 
 @MainActor
 class ExportManager {
+    static func copyToClipboard(state: CardState) {
+        guard let data = renderBitmapData(state: state, fileType: .png),
+              let image = NSImage(data: data) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([image])
+    }
+
     static func export(state: CardState, format: ExportFormat) {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "quote-card.\(format.fileExtension)"

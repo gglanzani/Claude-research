@@ -18,6 +18,7 @@ struct ContentView: View {
             previewPanel
                 .frame(minWidth: 500)
         }
+        .focusedObject(state)
         .onAppear { quoteFocused = true }
     }
 
@@ -126,6 +127,17 @@ struct ContentView: View {
 
                 Divider().frame(height: 16)
 
+                Button {
+                    Task { @MainActor in
+                        ExportManager.copyToClipboard(state: state)
+                    }
+                } label: {
+                    Label("Copy Image", systemImage: "doc.on.clipboard")
+                }
+                .buttonStyle(.borderless)
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+                .help("Copy image to clipboard (⇧⌘C)")
+
                 ExportButton(state: state)
             }
             .padding(.horizontal, 20)
@@ -205,8 +217,20 @@ struct ExportButton: View {
 // MARK: - App Commands
 
 struct AppCommands: Commands {
+    @FocusedObject private var state: CardState?
+
     var body: some Commands {
         CommandMenu("Card") {
+            Button("Copy Image") {
+                if let state {
+                    Task { @MainActor in
+                        ExportManager.copyToClipboard(state: state)
+                    }
+                }
+            }
+            .keyboardShortcut("c", modifiers: [.command, .shift])
+            .disabled(state == nil)
+
             Button("Export…") {
                 // handled by ExportButton
             }

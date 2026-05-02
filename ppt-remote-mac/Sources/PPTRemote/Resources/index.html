@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PPT Remote</title>
+<style>
+  :root { color-scheme: dark; }
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #0e0e10;
+    color: #fff;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 6px) 12px calc(env(safe-area-inset-bottom) + 12px);
+    gap: 8px;
+  }
+  .status {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #888;
+    min-height: 1em;
+  }
+  .row { display: flex; gap: 8px; }
+  button {
+    flex: 1;
+    min-height: 64px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 14px;
+    background: #2a2a2e;
+    color: #fff;
+    transition: transform 0.05s ease, background 0.05s ease;
+  }
+  button:active { background: #444; transform: scale(0.98); }
+  .start { background: #1f6f3a; }
+  .end { background: #7a2424; }
+  .laser-toggle { background: #3a3a8a; min-height: 56px; }
+  .laser-toggle.active { background: #d52a4d; }
+  .pad {
+    flex: 1;
+    background: #16161a;
+    border: 2px dashed #2c2c34;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 0.9rem;
+    touch-action: none;
+  }
+  .pad.active {
+    background: #2a121b;
+    border-color: #d52a4d;
+    color: #d52a4d;
+  }
+</style>
+</head>
+<body>
+  <div class="status" id="status">Ready</div>
+
+  <div class="row">
+    <button class="start" data-action="start">Start Show</button>
+    <button class="end" data-action="end">End Show</button>
+  </div>
+
+  <div class="row">
+    <button data-action="prev">◀ Prev</button>
+    <button data-action="next">Next ▶</button>
+  </div>
+
+  <button class="laser-toggle" id="laserToggle">Laser: Off</button>
+
+  <div class="pad" id="pad">Drag here to move cursor</div>
+
+  <div class="row">
+    <button data-action="prev">◀</button>
+    <button data-action="next">▶</button>
+  </div>
+
+<script>
+const status = document.getElementById('status');
+
+async function send(action) {
+  status.textContent = action + '…';
+  try {
+    const r = await fetch('/api/' + action, { method: 'POST' });
+    const j = await r.json();
+    status.textContent = j.ok ? action + ' ✓' : (action + ' ✗ ' + (j.message || j.error || ''));
+  } catch (e) {
+    status.textContent = action + ' error: ' + e.message;
+  }
+}
+
+document.querySelectorAll('button[data-action]').forEach(b => {
+  b.addEventListener('click', () => send(b.dataset.action));
+});
+
+const laserBtn = document.getElementById('laserToggle');
+const pad = document.getElementById('pad');
+let laserOn = false;
+laserBtn.addEventListener('click', () => {
+  laserOn = !laserOn;
+  laserBtn.textContent = 'Laser: ' + (laserOn ? 'On' : 'Off');
+  laserBtn.classList.toggle('active', laserOn);
+  pad.classList.toggle('active', laserOn);
+  send('laser');
+});
+
+const SENS = 2.5;
+let last = null;
+let pending = null;
+let inflight = false;
+
+async function flush() {
+  if (inflight || !pending) return;
+  const body = pending;
+  pending = null;
+  inflight = true;
+  try {
+    await fetch('/api/move', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (_) { /* drop */ }
+  inflight = false;
+  if (pending) flush();
+}
+
+function onTouch(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  if (e.type === 'touchstart' && t) {
+    last = { x: t.clientX, y: t.clientY };
+    return;
+  }
+  if (e.type === 'touchmove' && t && last) {
+    const dx = (t.clientX - last.x) * SENS;
+    const dy = (t.clientY - last.y) * SENS;
+    last = { x: t.clientX, y: t.clientY };
+    if (pending) {
+      pending.dx += dx;
+      pending.dy += dy;
+    } else {
+      pending = { dx, dy };
+    }
+    flush();
+    return;
+  }
+  if (e.type === 'touchend' || e.type === 'touchcancel') {
+    last = null;
+  }
+}
+
+['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(ev =>
+  pad.addEventListener(ev, onTouch, { passive: false })
+);
+</script>
+</body>
+</html>

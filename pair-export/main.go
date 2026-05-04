@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -13,17 +14,11 @@ import (
 )
 
 func main() {
-	inputPath := flag.String("input", "", "Path to JSON file containing the pair issue database (array of objects) (required)")
+	inputPath := flag.String("input", ".pair/issues.jsonl", "Path to PaiR JSONL export (or a JSON array)")
 	outputDir := flag.String("output", "out", "Directory to write markdown files into")
 	notesField := flag.String("notes-field", "notes", "Field name whose value becomes the markdown body")
-	filenameField := flag.String("filename-field", "", "Field used to derive the markdown filename (default: tries title, name, id, then index)")
+	filenameField := flag.String("filename-field", "", "Field used to derive the markdown filename (default: tries id, short_id, title)")
 	flag.Parse()
-
-	if *inputPath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --input is required")
-		flag.Usage()
-		os.Exit(1)
-	}
 
 	data, err := os.ReadFile(*inputPath)
 	if err != nil {
@@ -31,9 +26,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	var records []map[string]any
-	if err := json.Unmarshal(data, &records); err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing JSON (expected an array of objects): %v\n", err)
+	records, err := parseRecords(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing input: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -75,7 +70,7 @@ func deriveFilename(rec map[string]any, preferred string, index int) string {
 			return scalarString(v)
 		}
 	}
-	for _, k := range []string{"title", "name", "id"} {
+	for _, k := range []string{"id", "short_id", "short-id", "title", "name"} {
 		if v, ok := rec[k]; ok {
 			if s := scalarString(v); s != "" {
 				return s
@@ -83,6 +78,39 @@ func deriveFilename(rec map[string]any, preferred string, index int) string {
 		}
 	}
 	return fmt.Sprintf("issue-%d", index+1)
+}
+
+// parseRecords accepts either JSONL (one object per line, as PaiR's
+// .pair/issues.jsonl export uses) or a JSON array of objects.
+func parseRecords(data []byte) ([]map[string]any, error) {
+	trimmed := strings.TrimLeft(string(data), " \t\r\n")
+	if strings.HasPrefix(trimmed, "[") {
+		var arr []map[string]any
+		if err := json.Unmarshal(data, &arr); err != nil {
+			return nil, err
+		}
+		return arr, nil
+	}
+	var out []map[string]any
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	scanner.Buffer(make([]byte, 1024*1024), 64*1024*1024)
+	lineNo := 0
+	for scanner.Scan() {
+		lineNo++
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		var rec map[string]any
+		if err := json.Unmarshal([]byte(line), &rec); err != nil {
+			return nil, fmt.Errorf("line %d: %w", lineNo, err)
+		}
+		out = append(out, rec)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 var slugRe = regexp.MustCompile(`[^a-z0-9]+`)

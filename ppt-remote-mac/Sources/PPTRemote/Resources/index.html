@@ -8,136 +8,227 @@
 <title>PPT Remote</title>
 <style>
   :root { color-scheme: dark; }
-  * {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  html, body {
-    height: 100%;
-    margin: 0;
-    font-family: -apple-system, system-ui, sans-serif;
-    background: #0e0e10;
-    color: #fff;
-    overflow: hidden;
-  }
+  *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+  html, body { height: 100%; margin: 0; font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
   body {
     display: flex;
     flex-direction: column;
-    padding: calc(env(safe-area-inset-top) + 6px) 12px calc(env(safe-area-inset-bottom) + 12px);
-    gap: 8px;
+    padding: calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 16px);
+    gap: 10px;
+    background: #0b0b16;
+    background-image: radial-gradient(ellipse 90% 40% at 50% 0%, rgba(80,60,180,0.18) 0%, transparent 100%);
   }
+
   .status {
     text-align: center;
-    font-size: 0.8rem;
-    color: #888;
-    min-height: 1em;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    min-height: 1.1em;
+    color: transparent;
+    transition: color 0.3s;
   }
-  .row { display: flex; gap: 8px; }
+  .status.ok  { color: #4ade80; }
+  .status.err { color: #f87171; }
+
+  .row { display: flex; gap: 10px; }
+
   button {
     flex: 1;
-    min-height: 64px;
-    font-size: 1.05rem;
-    font-weight: 600;
     border: none;
-    border-radius: 14px;
-    background: #2a2a2e;
+    border-radius: 18px;
     color: #fff;
-    transition: transform 0.05s ease, background 0.05s ease;
-  }
-  button:active { background: #444; transform: scale(0.98); }
-  .start { background: #1f6f3a; }
-  .end { background: #7a2424; }
-  .laser-toggle { background: #3a3a8a; min-height: 56px; }
-  .laser-toggle.active { background: #d52a4d; }
-  .pad {
-    flex: 1;
-    background: #16161a;
-    border: 2px dashed #2c2c34;
-    border-radius: 14px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #555;
-    font-size: 0.9rem;
+    gap: 5px;
+    min-height: 72px;
+    transition: transform 0.07s ease, filter 0.07s ease;
+  }
+  button:active { transform: scale(0.94); filter: brightness(0.78); }
+
+  .icon { font-size: 1.45rem; line-height: 1; }
+  .lbl  { font-size: 0.68rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+
+  .btn-show {
+    background: linear-gradient(150deg, #166534 0%, #14532d 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.07) inset, 0 4px 20px rgba(21,128,61,0.3);
+    transition: transform 0.07s ease, filter 0.07s ease, background 0.35s ease, box-shadow 0.35s ease;
+  }
+  .btn-show.presenting {
+    background: linear-gradient(150deg, #991b1b 0%, #7f1d1d 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.07) inset, 0 4px 20px rgba(185,28,28,0.3);
+  }
+  .btn-nav {
+    background: linear-gradient(150deg, #1c1e32 0%, #14162a 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 4px 14px rgba(0,0,0,0.45);
+  }
+
+  .laser-row { display: flex; justify-content: center; }
+  .btn-laser {
+    flex: none;
+    width: 56%;
+    min-height: 44px;
+    border-radius: 22px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    flex-direction: row;
+    gap: 8px;
+    background: linear-gradient(150deg, #1c1e32 0%, #14162a 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 4px 14px rgba(0,0,0,0.45);
+    transition: transform 0.07s ease, filter 0.07s ease, background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+  }
+  .btn-laser.on {
+    background: linear-gradient(150deg, #9f1239 0%, #881337 100%);
+    border-color: rgba(251,113,133,0.25);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset, 0 4px 28px rgba(159,18,57,0.5);
+  }
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #444;
+    flex-shrink: 0;
+    transition: background 0.35s, box-shadow 0.35s;
+  }
+  .btn-laser.on .dot {
+    background: #fb7185;
+    box-shadow: 0 0 8px rgba(251,113,133,0.9);
+  }
+
+  .pad {
+    flex: 1;
+    background: linear-gradient(160deg, #0e0e1c 0%, #0b0b16 100%);
+    border: 1.5px dashed rgba(255,255,255,0.09);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     touch-action: none;
+    transition: border-color 0.35s, background 0.35s;
+    color: #3a3a50;
   }
-  .pad.active {
-    background: #2a121b;
-    border-color: #d52a4d;
-    color: #d52a4d;
+  .pad.on {
+    border-color: rgba(251,113,133,0.3);
+    background: linear-gradient(160deg, #160810 0%, #100610 100%);
+    color: rgba(251,113,133,0.5);
   }
+  .pad-icon  { font-size: 2rem; }
+  .pad-label { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
 </style>
 </head>
 <body>
-  <div class="status" id="status">Ready</div>
 
-  <div class="row">
-    <button class="start" data-action="start">Start Show</button>
-    <button class="end" data-action="end">End Show</button>
-  </div>
+<div class="status" id="status"></div>
 
-  <div class="row">
-    <button data-action="prev">◀ Prev</button>
-    <button data-action="next">Next ▶</button>
-  </div>
+<div class="row">
+  <button class="btn-show" id="showBtn">
+    <span class="icon" id="showIcon">▶</span>
+    <span class="lbl" id="showLabel">Start Show</span>
+  </button>
+</div>
 
-  <button class="laser-toggle" id="laserToggle">Laser: Off</button>
+<div class="row">
+  <button class="btn-nav" data-action="prev">
+    <span class="icon">◀</span>
+    <span class="lbl">Prev</span>
+  </button>
+  <button class="btn-nav" data-action="next">
+    <span class="icon">▶</span>
+    <span class="lbl">Next</span>
+  </button>
+</div>
 
-  <div class="pad" id="pad">Drag here to move cursor</div>
+<div class="laser-row">
+  <button class="btn-laser" id="laserBtn">
+    <span class="dot"></span>
+    <span id="laserLabel">Laser Off</span>
+  </button>
+</div>
 
-  <div class="row">
-    <button data-action="prev">◀</button>
-    <button data-action="next">▶</button>
-  </div>
+<div class="pad" id="pad">
+  <span class="pad-icon">⊹</span>
+  <span class="pad-label">Drag to move pointer</span>
+</div>
 
 <script>
-const status = document.getElementById('status');
+const base = '/' + location.pathname.split('/').filter(Boolean)[0];
+const statusEl = document.getElementById('status');
+let statusTimer = null;
 
 async function send(action) {
-  status.textContent = action + '…';
+  clearTimeout(statusTimer);
+  statusEl.className = 'status';
+  statusEl.textContent = '';
   try {
-    const r = await fetch('/api/' + action, { method: 'POST' });
+    const r = await fetch(base + '/api/' + action, { method: 'POST' });
     const j = await r.json();
-    status.textContent = j.ok ? action + ' ✓' : (action + ' ✗ ' + (j.message || j.error || ''));
+    if (j.ok) {
+      statusEl.className = 'status ok';
+      statusEl.textContent = '✓';
+      statusTimer = setTimeout(() => { statusEl.className = 'status'; statusEl.textContent = ''; }, 1200);
+    } else {
+      statusEl.className = 'status err';
+      statusEl.textContent = j.message || j.error || 'error';
+    }
   } catch (e) {
-    status.textContent = action + ' error: ' + e.message;
+    statusEl.className = 'status err';
+    statusEl.textContent = e.message;
   }
 }
 
-document.querySelectorAll('button[data-action]').forEach(b => {
-  b.addEventListener('click', () => send(b.dataset.action));
+document.querySelectorAll('button[data-action]').forEach(b =>
+  b.addEventListener('click', () => send(b.dataset.action))
+);
+
+const showBtn = document.getElementById('showBtn');
+const showIcon = document.getElementById('showIcon');
+const showLabel = document.getElementById('showLabel');
+let presenting = false;
+
+showBtn.addEventListener('click', async () => {
+  const action = presenting ? 'end' : 'start';
+  presenting = !presenting;
+  showBtn.classList.toggle('presenting', presenting);
+  showIcon.textContent = presenting ? '■' : '▶';
+  showLabel.textContent = presenting ? 'End Show' : 'Start Show';
+  await send(action);
 });
 
-const laserBtn = document.getElementById('laserToggle');
+const laserBtn = document.getElementById('laserBtn');
+const laserLabel = document.getElementById('laserLabel');
 const pad = document.getElementById('pad');
 let laserOn = false;
+
 laserBtn.addEventListener('click', () => {
   laserOn = !laserOn;
-  laserBtn.textContent = 'Laser: ' + (laserOn ? 'On' : 'Off');
-  laserBtn.classList.toggle('active', laserOn);
-  pad.classList.toggle('active', laserOn);
+  laserBtn.classList.toggle('on', laserOn);
+  pad.classList.toggle('on', laserOn);
+  laserLabel.textContent = laserOn ? 'Laser On' : 'Laser Off';
   send('laser');
 });
 
 const SENS = 2.5;
-let last = null;
-let pending = null;
-let inflight = false;
+let last = null, pending = null, inflight = false;
 
 async function flush() {
   if (inflight || !pending) return;
-  const body = pending;
-  pending = null;
-  inflight = true;
+  const body = pending; pending = null; inflight = true;
   try {
-    await fetch('/api/move', {
+    await fetch(base + '/api/move', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
-  } catch (_) { /* drop */ }
+  } catch (_) {}
   inflight = false;
   if (pending) flush();
 }
@@ -145,29 +236,18 @@ async function flush() {
 function onTouch(e) {
   e.preventDefault();
   const t = e.touches[0];
-  if (e.type === 'touchstart' && t) {
-    last = { x: t.clientX, y: t.clientY };
-    return;
-  }
+  if (e.type === 'touchstart' && t) { last = { x: t.clientX, y: t.clientY }; return; }
   if (e.type === 'touchmove' && t && last) {
     const dx = (t.clientX - last.x) * SENS;
     const dy = (t.clientY - last.y) * SENS;
     last = { x: t.clientX, y: t.clientY };
-    if (pending) {
-      pending.dx += dx;
-      pending.dy += dy;
-    } else {
-      pending = { dx, dy };
-    }
-    flush();
-    return;
+    pending ? (pending.dx += dx, pending.dy += dy) : (pending = { dx, dy });
+    flush(); return;
   }
-  if (e.type === 'touchend' || e.type === 'touchcancel') {
-    last = null;
-  }
+  if (e.type === 'touchend' || e.type === 'touchcancel') last = null;
 }
 
-['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(ev =>
+['touchstart','touchmove','touchend','touchcancel'].forEach(ev =>
   pad.addEventListener(ev, onTouch, { passive: false })
 );
 </script>

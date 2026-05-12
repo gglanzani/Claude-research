@@ -34,6 +34,23 @@ final class Router {
         }
     }
 
+    func handleWS(path: String, message: String) -> String? {
+        guard path.hasPrefix("/\(token)/ws") else {
+            return #"{"ok":false,"message":"unauthorized"}"#
+        }
+        guard let data = message.data(using: .utf8),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let action = json["action"] as? String else {
+            return #"{"ok":false,"message":"invalid"}"#
+        }
+        var bodyDict: [String: Any] = [:]
+        if let dx = json["dx"] { bodyDict["dx"] = dx }
+        if let dy = json["dy"] { bodyDict["dy"] = dy }
+        let body = (try? JSONSerialization.data(withJSONObject: bodyDict)) ?? Data()
+        let resp = handleAction(action, body: body)
+        return String(data: resp.body, encoding: .utf8)
+    }
+
     private func serveIndex() -> HTTPResponse {
         guard let url = Bundle.module.url(forResource: "index", withExtension: "html"),
               let data = try? Data(contentsOf: url) else {

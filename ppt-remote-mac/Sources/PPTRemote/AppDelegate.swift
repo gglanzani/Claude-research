@@ -46,68 +46,83 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                   cornerWidth: s * 0.2237, cornerHeight: s * 0.2237, transform: nil)
             ctx.addPath(squircle); ctx.clip()
 
-            // Background gradient: indigo top → near-black bottom
+            // Background gradient: vivid royal blue → teal
             let bg = CGGradient(colorsSpace: rgb, colors: [
-                CGColor(red: 0.20, green: 0.13, blue: 0.58, alpha: 1),
-                CGColor(red: 0.04, green: 0.03, blue: 0.13, alpha: 1),
+                CGColor(red: 0.08, green: 0.15, blue: 0.72, alpha: 1),
+                CGColor(red: 0.00, green: 0.52, blue: 0.62, alpha: 1),
             ] as CFArray, locations: nil)!
-            ctx.drawLinearGradient(bg, start: CGPoint(x: s * 0.3, y: s),
-                                   end: CGPoint(x: s * 0.7, y: 0), options: [])
+            ctx.drawLinearGradient(bg, start: CGPoint(x: 0, y: s),
+                                   end: CGPoint(x: s, y: 0), options: [])
 
             // Subtle top sheen
             let sheen = CGGradient(colorsSpace: rgb, colors: [
-                CGColor(red: 1, green: 1, blue: 1, alpha: 0.10),
+                CGColor(red: 1, green: 1, blue: 1, alpha: 0.16),
                 CGColor(red: 1, green: 1, blue: 1, alpha: 0.00),
             ] as CFArray, locations: nil)!
             ctx.drawLinearGradient(sheen, start: CGPoint(x: s / 2, y: s),
-                                   end: CGPoint(x: s / 2, y: s * 0.55), options: [])
+                                   end: CGPoint(x: s / 2, y: s * 0.50), options: [])
 
             // 16:9 slide shape, centred and slightly raised
-            let sw = s * 0.60, sh = sw * 9 / 16
-            let sx = (s - sw) / 2, sy = (s - sh) / 2 + s * 0.022
+            let sw = s * 0.62, sh = sw * 9 / 16
+            let sx = (s - sw) / 2, sy = (s - sh) / 2 + s * 0.015
             let slideRect = CGRect(x: sx, y: sy, width: sw, height: sh)
-            let slideR = s * 0.030
+            let slideR = s * 0.025
             let slidePath = CGPath(roundedRect: slideRect, cornerWidth: slideR,
                                    cornerHeight: slideR, transform: nil)
 
             ctx.addPath(slidePath)
-            ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.13))
+            ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.20))
             ctx.fillPath()
 
             ctx.addPath(slidePath)
-            ctx.setStrokeColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.45))
-            ctx.setLineWidth(s * 0.010)
+            ctx.setStrokeColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.60))
+            ctx.setLineWidth(s * 0.008)
             ctx.strokePath()
 
-            // Red laser dot — off-centre on the slide
-            let dotX = sx + sw * 0.57, dotY = sy + sh * 0.44
-            let dotR = s * 0.050
+            // Content lines inside slide (left side, y increases upward)
+            ctx.setStrokeColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.38))
+            ctx.setLineWidth(s * 0.018)
+            ctx.setLineCap(.round)
+            let lx = sx + sw * 0.10
+            let titleY = sy + sh * 0.72, body1Y = sy + sh * 0.52, body2Y = sy + sh * 0.34
+            ctx.move(to: CGPoint(x: lx, y: titleY)); ctx.addLine(to: CGPoint(x: lx + sw * 0.50, y: titleY)); ctx.strokePath()
+            ctx.move(to: CGPoint(x: lx, y: body1Y)); ctx.addLine(to: CGPoint(x: lx + sw * 0.40, y: body1Y)); ctx.strokePath()
+            ctx.move(to: CGPoint(x: lx, y: body2Y)); ctx.addLine(to: CGPoint(x: lx + sw * 0.32, y: body2Y)); ctx.strokePath()
 
-            // Glow halo
+            // Red laser dot — right side of the slide
+            let dotX = sx + sw * 0.76, dotY = sy + sh * 0.52
+            let dotR = s * 0.062
+
+            // Outer glow
+            let outerGlow = CGGradient(colorsSpace: rgb, colors: [
+                CGColor(red: 1.0, green: 0.15, blue: 0.20, alpha: 0.40),
+                CGColor(red: 1.0, green: 0.15, blue: 0.20, alpha: 0.00),
+            ] as CFArray, locations: nil)!
+            ctx.drawRadialGradient(outerGlow, startCenter: CGPoint(x: dotX, y: dotY), startRadius: 0,
+                                   endCenter: CGPoint(x: dotX, y: dotY), endRadius: dotR * 4.0, options: [])
+
+            // Inner glow
             let glow = CGGradient(colorsSpace: rgb, colors: [
-                CGColor(red: 1.0, green: 0.10, blue: 0.20, alpha: 0.60),
-                CGColor(red: 1.0, green: 0.10, blue: 0.20, alpha: 0.00),
+                CGColor(red: 1.0, green: 0.15, blue: 0.20, alpha: 0.85),
+                CGColor(red: 1.0, green: 0.10, blue: 0.15, alpha: 0.00),
             ] as CFArray, locations: nil)!
             ctx.drawRadialGradient(glow, startCenter: CGPoint(x: dotX, y: dotY), startRadius: 0,
-                                   endCenter: CGPoint(x: dotX, y: dotY), endRadius: dotR * 2.8, options: [])
+                                   endCenter: CGPoint(x: dotX, y: dotY), endRadius: dotR * 2.2, options: [])
 
             // Dot core
-            ctx.addEllipse(in: CGRect(x: dotX - dotR, y: dotY - dotR,
-                                      width: dotR * 2, height: dotR * 2))
-            ctx.setFillColor(CGColor(red: 1.0, green: 0.10, blue: 0.20, alpha: 1))
+            ctx.addEllipse(in: CGRect(x: dotX - dotR, y: dotY - dotR, width: dotR * 2, height: dotR * 2))
+            ctx.setFillColor(CGColor(red: 1.0, green: 0.12, blue: 0.18, alpha: 1))
             ctx.fillPath()
 
             // Specular highlight on dot
-            let hiW = dotR * 0.80, hiH = dotR * 0.52
-            ctx.addEllipse(in: CGRect(x: dotX - hiW * 0.40, y: dotY + dotR * 0.12,
-                                      width: hiW, height: hiH))
-            ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.50))
+            let hiW = dotR * 0.78, hiH = dotR * 0.50
+            ctx.addEllipse(in: CGRect(x: dotX - hiW * 0.40, y: dotY + dotR * 0.12, width: hiW, height: hiH))
+            ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.60))
             ctx.fillPath()
 
             return true
         }
         NSApp.applicationIconImage = icon
-        // Write the icon into the bundle's extended attributes so Finder shows it
         if let path = Bundle.main.bundlePath as String? {
             NSWorkspace.shared.setIcon(icon, forFile: path, options: [])
         }
@@ -135,6 +150,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let copyItem = NSMenuItem(title: "Copy URL", action: #selector(copyURL), keyEquivalent: "c")
         copyItem.target = self
         menu.addItem(copyItem)
+        let refreshItem = NSMenuItem(title: "Refresh URL", action: #selector(refreshURL), keyEquivalent: "r")
+        refreshItem.target = self
+        menu.addItem(refreshItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(
             title: "Quit",
@@ -150,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let router = Router(scripts: scripts, mover: mover, token: token)
         do {
             let server = try HTTPServer(port: port, handler: router.handle)
+            server.wsHandler = router.handleWS
             try server.start()
             self.server = server
             updateMenuURL()
@@ -174,6 +193,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 view.update(url: currentURL())
             }
         }
+    }
+
+    @objc private func refreshURL() {
+        updateMenuURL()
     }
 
     @objc private func copyURL() {

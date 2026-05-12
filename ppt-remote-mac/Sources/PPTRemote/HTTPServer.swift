@@ -54,6 +54,7 @@ final class HTTPServer {
     private var listener: NWListener?
     private let handler: (HTTPRequest) -> HTTPResponse
     private let queue = DispatchQueue(label: "PPTRemote.server", qos: .userInitiated)
+    var wsHandler: ((String, String) -> String?)?
 
     init(port: UInt16, handler: @escaping (HTTPRequest) -> HTTPResponse) throws {
         guard let p = NWEndpoint.Port(rawValue: port) else {
@@ -85,6 +86,15 @@ final class HTTPServer {
             if let data { buf.append(data) }
 
             if let req = parseRequest(buf) {
+                if req.headers["upgrade"]?.lowercased() == "websocket",
+                   let key = req.headers["sec-websocket-key"],
+                   let wsHandler = self.wsHandler {
+                    let handshake = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: \(wsAcceptKey(key))\r\n\r\n"
+                    conn.send(content: Data(handshake.utf8), completion: .contentProcessed { [weak self] _ in
+                        self?.receiveWS(conn, path: req.path, buffer: Data(), handler: wsHandler)
+                    })
+                    return
+                }
                 let resp = self.handler(req)
                 conn.send(content: resp.serialize(), completion: .contentProcessed { _ in
                     conn.cancel()
@@ -97,6 +107,34 @@ final class HTTPServer {
                 return
             }
             self.receive(conn, buffer: buf)
+        }
+    }
+
+    private func receiveWS(_ conn: NWConnection, path: String, buffer: Data, handler: @escaping (String, String) -> String?) {
+        conn.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, _, error in
+            guard let self, error == nil else { conn.cancel(); return }
+            var buf = buffer
+            if let data { buf.append(data) }
+
+            while !buf.isEmpty, let frame = parseWSFrame(buf) {
+                buf = Data(buf.dropFirst(frame.consumed))
+                switch frame.opcode {
+                case .close:
+                    conn.send(content: wsCloseFrame, completion: .contentProcessed { _ in conn.cancel() })
+                    return
+                case .ping:
+                    conn.send(content: makeWSPongFrame(frame.payload), completion: .idempotent)
+                case .text:
+                    if let text = String(data: frame.payload, encoding: .utf8),
+                       let response = handler(path, text) {
+                        conn.send(content: makeWSTextFrame(response), completion: .idempotent)
+                    }
+                default: break
+                }
+            }
+
+            if buf.count > 1_048_576 { conn.cancel(); return }
+            self.receiveWS(conn, path: path, buffer: buf, handler: handler)
         }
     }
 }

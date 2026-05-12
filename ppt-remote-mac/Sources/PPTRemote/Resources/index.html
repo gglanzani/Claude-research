@@ -164,21 +164,40 @@ const base = '/' + location.pathname.split('/').filter(Boolean)[0];
 const statusEl = document.getElementById('status');
 let statusTimer = null;
 
+// WebSocket — same host/port, upgrade path /<token>/ws
+const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+let ws = null, wsReady = false;
+
+function connectWS() {
+  ws = new WebSocket(wsProto + '//' + location.host + base + '/ws');
+  ws.onopen  = () => { wsReady = true; };
+  ws.onclose = ws.onerror = () => { wsReady = false; setTimeout(connectWS, 2000); };
+  ws.onmessage = (e) => {
+    try { showFeedback(JSON.parse(e.data)); } catch (_) {}
+  };
+}
+connectWS();
+
+function showFeedback(j) {
+  clearTimeout(statusTimer);
+  if (j.ok) {
+    statusEl.className = 'status ok';
+    statusEl.textContent = '✓';
+    statusTimer = setTimeout(() => { statusEl.className = 'status'; statusEl.textContent = ''; }, 1200);
+  } else {
+    statusEl.className = 'status err';
+    statusEl.textContent = j.message || j.error || 'error';
+  }
+}
+
 async function send(action) {
   clearTimeout(statusTimer);
   statusEl.className = 'status';
   statusEl.textContent = '';
+  if (wsReady) { ws.send(JSON.stringify({ action })); return; }
   try {
     const r = await fetch(base + '/api/' + action, { method: 'POST' });
-    const j = await r.json();
-    if (j.ok) {
-      statusEl.className = 'status ok';
-      statusEl.textContent = '✓';
-      statusTimer = setTimeout(() => { statusEl.className = 'status'; statusEl.textContent = ''; }, 1200);
-    } else {
-      statusEl.className = 'status err';
-      statusEl.textContent = j.message || j.error || 'error';
-    }
+    showFeedback(await r.json());
   } catch (e) {
     statusEl.className = 'status err';
     statusEl.textContent = e.message;
@@ -216,21 +235,24 @@ laserBtn.addEventListener('click', () => {
   send('laser');
 });
 
+// Cursor movement — fire-and-forget over WS, batched HTTP fallback
 const SENS = 2.5;
 let last = null, pending = null, inflight = false;
 
-async function flush() {
-  if (inflight || !pending) return;
+function flush() {
+  if (!pending) return;
+  if (wsReady) {
+    const body = pending; pending = null;
+    ws.send(JSON.stringify({ action: 'move', ...body }));
+    return;
+  }
+  if (inflight) return;
   const body = pending; pending = null; inflight = true;
-  try {
-    await fetch(base + '/api/move', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch (_) {}
-  inflight = false;
-  if (pending) flush();
+  fetch(base + '/api/move', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => {}).finally(() => { inflight = false; if (pending) flush(); });
 }
 
 function onTouch(e) {
